@@ -6,7 +6,7 @@
     <title>BCET | Admin Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; font-family: 'Inter', sans-serif; background-color: #f8fafc; display: flex; justify-content: center; padding: 20px; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background-color: #f8fafc; display: flex; justify-content: center; padding: 20px; box-sizing: border-box; }
         .dashboard-container { width: 100%; max-width: 500px; position: relative; }
         
         .header-card { background: white; padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e2e8f0; }
@@ -38,11 +38,36 @@
         .stat-label { font-size: 0.6rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
         .stat-value { font-size: 1.2rem; font-weight: 800; color: #1e293b; margin-top: 5px; }
 
-        .vote-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-        .input-box { padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.9rem; color: #1e293b; }
-        .name-input { flex: 2; font-weight: 600; }
-        .symbol-input { flex: 0.5; text-align: center; font-size: 1.2rem; }
-        .vote-count-display { font-weight: 700; color: #2563eb; min-width: 75px; text-align: right; }
+        /* FIXED RESPONSIVE CANDIDATE TALLY ROW */
+        .vote-row { 
+            display: flex; 
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center; 
+            gap: 8px; 
+            margin-bottom: 16px; 
+            padding: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+        }
+        .input-box { padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.9rem; color: #1e293b; background: white; box-sizing: border-box; }
+        .name-input { flex: 2; min-width: 120px; font-weight: 600; }
+        .symbol-input { flex: 0.5; min-width: 50px; text-align: center; font-size: 1.2rem; }
+        
+        /* High-Tech Badge look for counting to prevent screen cutting */
+        .vote-count-display { 
+            font-weight: 700; 
+            color: white; 
+            background: #2563eb;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            text-align: center; 
+            flex-grow: 1;
+            min-width: 90px;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.15);
+        }
 
         .btn-action { width: 100%; padding: 14px; border-radius: 10px; border: none; font-weight: 600; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
         .btn-sync { background: #10b981; color: white; }
