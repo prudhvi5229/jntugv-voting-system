@@ -4,274 +4,344 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BCET | Blockchain E-Voting</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --blue-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --accent-blue: #2563eb;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --border-color: #e2e8f0;
+            --box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            --dashboard-bg: #f8fafc;
+            --btn-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            --card-hover: #f1f5f9;
+        }
+
+        [data-theme="dark"] {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --border-color: #334155;
+            --box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            --dashboard-bg: #0f172a;
+            --btn-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            --card-hover: #334155;
         }
 
         body {
             margin: 0; padding: 0;
             font-family: 'Inter', sans-serif;
-            background: var(--blue-gradient);
+            background: var(--bg-gradient);
             display: flex; justify-content: center; align-items: center;
             min-height: 100vh;
-            flex-direction: column; 
+            flex-direction: column;
+            transition: background 0.3s ease;
         }
 
-        /* LOGOUT BAR */
+        /* TOP ACTIONS BAR */
         .top-bar {
             width: 100%;
             display: flex;
-            justify-content: flex-end;
-            padding: 15px 30px;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
             box-sizing: border-box;
             position: absolute;
             top: 0;
         }
 
-        .logout-btn {
+        /* DARK MODE TOGGLE SWITCH */
+        .theme-toggle {
             background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
+            padding: 8px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
             padding: 8px 15px;
             border-radius: 10px;
             text-decoration: none;
             font-size: 0.8rem;
             font-weight: 600;
             backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
         .main-card {
-            background: #ffffff;
-            width: 90%; max-width: 440px;
-            padding: 40px 30px;
-            border-radius: 30px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            background: var(--card-bg);
+            width: 92%; max-width: 450px;
+            padding: 35px 25px;
+            border-radius: 24px;
+            box-shadow: var(--box-shadow);
             text-align: center;
             position: relative;
             box-sizing: border-box;
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+            margin-top: 60px;
+            margin-bottom: 30px;
         }
 
         .college-logo {
-            width: 110px;
+            width: 90px;
             height: auto;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
         }
 
-        h2 { font-size: 1.8rem; margin: 0; color: #1e293b; font-weight: 700; }
-        .sub-heading { font-size: 0.8rem; color: #64748b; margin-bottom: 25px; }
+        h2 { font-size: 1.6rem; margin: 0; color: var(--text-main); font-weight: 800; }
+        .sub-heading { font-size: 0.75rem; color: var(--text-sub); margin-bottom: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* VOTER DASHBOARD STYLE */
-        .voter-dashboard {
-            background: #f8fafc;
-            padding: 15px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            border: 1px solid #e2e8f0;
+        /* INTERACTING BLOCKCHAIN SECURED UTILITY COMBINED CARD */
+        .voter-identity-dashboard {
+            background: var(--dashboard-bg);
+            padding: 14px 18px;
+            border-radius: 16px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
             text-align: left;
         }
+        .meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .voter-badge-title { font-size: 0.65rem; color: var(--text-sub); font-weight: 800; text-transform: uppercase; }
+        
+        /* Shield indicator and live pulsing icon */
+        .crypto-shield-badge {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #22c55e;
+            background: rgba(34, 197, 94, 0.1);
+            padding: 2px 8px;
+            border-radius: 50px;
+        }
+        .pulse-dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.6; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.6; } }
 
-        .dash-label { font-size: 0.6rem; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
-        .dash-id { font-size: 0.9rem; font-weight: 600; color: #1e293b; }
-        .dash-hash { font-size: 0.55rem; font-family: monospace; color: #2563eb; word-break: break-all; margin-top: 4px; }
+        .voter-main-id { font-size: 0.95rem; font-weight: 700; color: var(--text-main); }
+        .hash-chain-box { border-top: 1px dashed var(--border-color); margin-top: 8px; padding-top: 6px; }
+        .hash-chain-label { font-size: 0.55rem; color: var(--text-sub); font-weight: 700; text-transform: uppercase; }
+        .hash-chain-value { font-size: 0.65rem; font-family: monospace; color: #2563eb; word-break: break-all; margin: 2px 0 0 0; }
 
-        /* BLOCKCHAIN TOKEN BOX */
-        .token-box {
-            background: #f0fdf4;
-            border-left: 4px solid #22c55e;
-            padding: 12px;
-            border-radius: 12px;
+        /* LIGHT MODERN FLIP/ALERT BOX FOR TIMER */
+        .timer-strip {
+            background: rgba(239, 68, 68, 0.06);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            border-radius: 14px;
+            padding: 12px 16px;
             margin-bottom: 20px;
-            text-align: left;
-            box-shadow: 0 4px 10px rgba(34, 197, 94, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .timer-strip-label { font-size: 0.7rem; font-weight: 800; color: #ef4444; text-transform: uppercase; letter-spacing: 0.5px; }
+        .timer-strip-value { font-family: monospace !important; font-size: 1.3rem; color: #ef4444; font-weight: 800; letter-spacing: 0.5px; }
+
+        /* INTERACTIVE INTERFACE CANDIDATE CARDS */
+        .candidate-grid-space {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
         }
 
-        .token-label {
+        .interactive-card {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-sizing: border-box;
+        }
+
+        .interactive-card:hover {
+            background: var(--card-hover);
+            transform: translateY(-2px);
+        }
+
+        /* GLOWING EFFECT WHEN CHECKED */
+        .interactive-card:has(input:checked) {
+            border-color: #2563eb;
+            background: rgba(37, 99, 235, 0.04);
+            box-shadow: 0 0 15px rgba(37, 99, 235, 0.15);
+        }
+        [data-theme="dark"] .interactive-card:has(input:checked) {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.08);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .hidden-radio {
+            position: absolute;
+            opacity: 0;
+            width: 0; height: 0;
+        }
+
+        /* CUSTOM CHECK CIRCLE GLOW INDICATOR */
+        .custom-indicator-circle {
+            width: 20px; height: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            margin-right: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .interactive-card:has(input:checked) .custom-indicator-circle {
+            border-color: #2563eb;
+            background: #2563eb;
+        }
+        .custom-indicator-circle::after {
+            content: '';
+            width: 8px; height: 8px;
+            background: white;
+            border-radius: 50%;
+            display: none;
+        }
+        .interactive-card:has(input:checked) .custom-indicator-circle::after {
+            display: block;
+        }
+
+        /* PROFILE PIC LAYOUT SETUP */
+        .avatar-frame {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: var(--dashboard-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin-right: 14px;
+            border: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .candidate-details-block {
+            text-align: left;
+            flex-grow: 1;
+        }
+
+        .candidate-card-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0 0 2px 0;
+            display: block;
+        }
+
+        /* VIEW MANIFESTO LINK MECHANISMS */
+        .manifesto-trigger-link {
+            font-size: 0.7rem;
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .manifesto-trigger-link:hover { text-decoration: underline; }
+
+        .official-badge-tag {
             font-size: 0.6rem;
+            background: var(--dashboard-bg);
+            color: var(--text-sub);
+            padding: 4px 8px;
+            border-radius: 6px;
             font-weight: 700;
-            color: #166534;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            border: 1px solid var(--border-color);
         }
 
-        .token-value {
-            font-family: 'Courier New', monospace;
-            font-size: 1.1rem;
-            color: #14532d;
+        /* TRENDY CONTEMPORARY GRADIENT ACTION BUTTON */
+        .btn-confirm-gradient {
+            width: 100%;
+            background: var(--btn-gradient);
+            color: white;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            font-size: 1rem;
             font-weight: 700;
-            margin: 0;
-            word-break: break-all;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);
+            letter-spacing: 0.5px;
         }
 
-        /* MINING PROGRESS STYLE */
+        .btn-confirm-gradient:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 24px rgba(124, 58, 237, 0.35);
+            filter: brightness(1.05);
+        }
+
+        /* MINING LOADER PROGRESS ANIMATION BAR STYLE */
         #mining-status {
             display: none;
             margin-top: 20px;
             padding: 15px;
-            background: #eff6ff;
-            border-radius: 15px;
+            background: var(--dashboard-bg);
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
         }
         .mining-text { font-size: 0.75rem; font-weight: 700; color: #2563eb; margin-bottom: 8px; }
-        .progress-bg { width: 100%; height: 6px; background: #dbeafe; border-radius: 10px; overflow: hidden; }
+        .progress-bg { width: 100%; height: 6px; background: var(--border-color); border-radius: 10px; overflow: hidden; }
         .progress-bar { width: 0%; height: 100%; background: #2563eb; transition: width 1.4s ease-in-out; }
 
-        .timer-box {
-            background: #fff5f5;
-            border: 1px solid #ffe3e3;
-            border-radius: 15px;
-            padding: 12px;
-            margin-bottom: 25px;
-        }
+        /* COMPACT FOOTER ACTIONS */
+        .verify-link { display: inline-block; margin-top: 18px; color: #2563eb; text-decoration: none; font-weight: 700; font-size: 0.85rem; }
+        .verify-link:hover { text-decoration: underline; }
+        .quote-container { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color); }
+        .quote-text { font-style: italic; color: var(--text-sub); font-size: 0.75rem; font-weight: 600; }
 
-        .timer-label {
-            font-size: 0.65rem;
-            font-weight: 800;
-            color: #ef4444;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            margin-bottom: 4px;
+        /* MANIFESTO POPUP SHEET MODAL LAYOUT */
+        .manifesto-modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            align-items: center; justify-content: center;
         }
-
-        /* NEW UPDATED TIMER DESIGN: Decreased size and professional clean font */
-        .timer-value {
-            font-family: monospace !important;
-            font-size: 1.6rem;
-            color: #ef4444;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-
-        /* NEW RADIO CANDIDATE LIST LAYOUT */
-        .candidate-title-label {
-            font-size: 0.65rem;
-            font-weight: 800;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
+        .manifesto-content-box {
+            background: var(--card-bg);
+            color: var(--text-main);
+            padding: 25px;
+            border-radius: 20px;
+            width: 88%; max-width: 400px;
+            box-shadow: var(--box-shadow);
             text-align: left;
-            margin-bottom: 10px;
-            display: block;
+            border: 1px solid var(--border-color);
         }
-
-        .candidate-list-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 25px;
-        }
-
-        .candidate-option-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 18px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-        }
-
-        .candidate-option-row:hover {
-            background: #f1f5f9;
-            border-color: #cbd5e1;
-        }
-
-        .candidate-left-block {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .candidate-radio-input {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--accent-blue);
-            cursor: pointer;
-        }
-
-        .candidate-display-name {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #1e293b;
-        }
-
-        .candidate-badge {
-            font-size: 0.65rem;
-            background: #e2e8f0;
-            color: #475569;
-            padding: 4px 10px;
-            border-radius: 8px;
-            font-weight: 600;
-        }
-
-        .voter-badge {
-            background: #f1f5f9;
-            padding: 10px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            color: #475569;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* UPDATED CAST BALLOT ACTION BUTTON */
-        .btn-confirm {
-            width: 100%; background: var(--accent-blue); color: white; padding: 18px;
-            border: none; border-radius: 15px; font-size: 1rem; font-weight: 600;
-            cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
-        }
-
-        .btn-confirm:hover { transform: translateY(-2px); }
-
-        .quote-container {
-            margin-top: 25px;
-            padding-top: 15px;
-            border-top: 1px solid #f1f5f9;
-        }
-
-        .quote-text {
-            font-style: italic;
-            color: #94a3b8;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .quote-text span { color: var(--accent-blue); }
-
-        .verify-link { 
-            display: inline-block; 
-            margin-top: 15px; 
-            color: var(--accent-blue); 
-            text-decoration: underline; 
-            font-weight: 600; 
-            font-size: 0.85rem;
-        }
-
-        .locked-msg {
-            padding: 20px;
-            background: #f8fafc;
-            border-radius: 15px;
-            color: #94a3b8;
-            font-weight: 600;
-            font-size: 0.9rem;
-            border: 1px solid #e2e8f0;
-        }
+        .manifesto-header { font-size: 1.2rem; font-weight: 800; margin-top: 0; color: var(--text-main); }
+        .manifesto-body { font-size: 0.9rem; line-height: 1.5; color: var(--text-sub); margin: 15px 0 20px 0; }
+        .manifesto-close-btn { width: 100%; background: var(--dashboard-bg); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; }
     </style>
 </head>
 <body>
 
-{% if not session.get('token_verified') %}
-<script>window.location.href = "/auth_token_display";</script>
-{% endif %}
-
 <div class="top-bar">
+    <!-- DARK MODE INTERACTIVE ICON BUTTON CONTROLLER -->
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">
+        🌙 Dark Mode
+    </button>
     <a href="/logout" class="logout-btn">Exit Session</a>
 </div>
 
@@ -281,81 +351,124 @@
     <h2>BCET E-Voting</h2>
     <div class="sub-heading">Blockchain-Secured Student Election</div>
 
-    <div class="voter-dashboard">
-        <div class="dash-label">Voter Session Dashboard</div>
-        <div class="dash-id">Voter ID: {{ session['user_id'] }}</div>
-        <div class="dash-hash">SESSION_HASH: {{ session.get('generated_token') }}</div>
+    <!-- COMBINED HIGH SECURITY DASHBOARD ELEMENT -->
+    <div class="voter-identity-dashboard">
+        <div class="meta-row">
+            <span class="voter-badge-title">Voter ID Node Profile</span>
+            <span class="crypto-shield-badge">
+                <span class="pulse-dot"></span>
+                🛡️ Blockchain Secure
+            </span>
+        </div>
+        <div class="voter-main-id">{{ session['user_id'] }}</div>
+        
+        <div class="hash-chain-box">
+            <span class="hash-chain-label">Session ID Hash Vector:</span>
+            <p class="hash-chain-value">{{ session.get('generated_token') }}</p>
+        </div>
     </div>
 
-    <div class="token-box">
-        <div class="token-label">Blockchain Session ID:</div>
-        <p class="token-value">{{ session.get('generated_token') }}</p>
-    </div>
-
-    <div class="timer-box">
-        {% if election_status == "OPEN" %}
-            <div class="timer-label">Election Window Closing In:</div>
-            <div id="countdown" class="timer-value">00h 00m 00s</div>
-        {% elif election_status == "NOT_STARTED" %}
-            <div class="timer-label" style="color: #64748b;">Election Starts At:</div>
-            <div class="timer-value" style="color: #64748b; font-size: 1.5rem; font-style: normal !important;">
-                {{ settings.start_time.replace('T', ' ') }}
-            </div>
-        {% else %}
-            <div class="timer-label" style="color: #ef4444;">Election Status:</div>
-            <div class="timer-value" style="color: #ef4444; font-style: normal !important;">CLOSED</div>
-        {% endif %}
-    </div>
-
-    <div class="voter-badge">
-        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
-        </svg>
-        Authenticated: <strong>{{ session['user_id'] }}</strong>
+    <!-- RE-DESIGNED CRISP COUNTDOWN WINDOW -->
+    <div class="timer-strip">
+        <span class="timer-strip-label">Time Remaining</span>
+        <div id="countdown" class="timer-strip-value">00h 00m 00s</div>
     </div>
 
     {% if election_status == "OPEN" %}
     <form id="voteForm" action="/cast_vote" method="POST">
         <input type="hidden" name="student_id" value="{{ session['user_id'] }}">
 
-        <!-- UPDATED: EVM STYLE RADIO ROW LIST (Replaced the old dropdown select) -->
-        <span class="candidate-title-label">Select Your Candidate</span>
-        <div class="candidate-list-container">
+        <!-- HIGH TECH ACTIVE CARDS DISPLAY FOR NOMINEES -->
+        <span class="voter-badge-title" style="text-align: left; display: block; margin-bottom: 8px;">Official Ballot Nominees</span>
+        <div class="candidate-grid-space">
             {% for c in candidate_list %}
-            <label class="candidate-option-row">
-                <div class="candidate-left-block">
-                    <input type="radio" name="candidate" value="{{ c.name }}" class="candidate-radio-input" required>
-                    <span class="candidate-display-name">{{ c.symbol }} {{ c.name }}</span>
+            <label class="interactive-card">
+                <input type="radio" name="candidate" value="{{ c.name }}" class="hidden-radio" required>
+                
+                <div class="custom-indicator-circle"></div>
+                
+                <div class="avatar-frame">
+                    {{ c.symbol }}
                 </div>
-                <span class="candidate-badge">Official</span>
+                
+                <div class="candidate-details-block">
+                    <span class="candidate-card-name">{{ c.name }}</span>
+                    <!-- DYNAMIC ACCESSIBILITY FOR MANIFESTO DIALOGS -->
+                    <span class="manifesto-trigger-link" onclick="openManifesto(event, '{{ c.name }}', '{{ c.symbol }}')">Read Manifesto →</span>
+                </div>
+                
+                <span class="official-badge-tag">Official</span>
             </label>
             {% endfor %}
         </div>
 
-        <!-- UPDATED: Professional Action Text -->
-        <button type="submit" class="btn-confirm" id="confirmBtn">Cast Ballot</button>
+        <!-- NEW RE-STYLED GRADIENT ACTION COMPONENT BUTTON -->
+        <button type="submit" class="btn-confirm-gradient" id="confirmBtn">Cast Ballot</button>
     </form>
 
     <div id="mining-status">
-        <div class="mining-text">⛏️ BROADCASTING TO BLOCKCHAIN...</div>
+        <div class="mining-text">⛏️ ANCHORING BALLOT SECURELY INTO BLOCKCHAIN...</div>
         <div class="progress-bg">
             <div class="progress-bar" id="progressBar"></div>
         </div>
     </div>
     {% else %}
-    <div class="locked-msg">
-        🔒 The voting portal is currently locked.
+    <div style="padding: 16px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; color: #ef4444; font-weight: 700; font-size: 0.9rem;">
+        🔒 The digital voting window is currently locked or closed.
     </div>
     {% endif %}
 
-    <a href="/audit" class="verify-link">Verify Your Vote Receipt</a>
+    <a href="/audit" class="verify-link">Verify Vote Chain Receipt →</a>
 
     <div class="quote-container">
-        <p class="quote-text">" <span>One Student</span> — <span>One Vote</span> "</p>
+        <p class="quote-text">" One Student — One Vote "</p>
+    </div>
+</div>
+
+<!-- COMPACT DYNAMIC DIALOG MODAL SHEET FOR ELECTIVE AGENDA AGENDA -->
+<div id="manifestoModal" class="manifesto-modal">
+    <div class="manifesto-content-box">
+        <h3 class="manifesto-header" id="mHeader">Candidate Manifesto</h3>
+        <p class="manifesto-body" id="mBody">Loading agenda profile information...</p>
+        <button class="manifesto-close-btn" onclick="closeManifesto()">Dismiss Manifesto</button>
     </div>
 </div>
 
 <script>
+    // THEME CORE INTERACTIVE CONTROLLER FOR TOGGLING SYSTEM STATE
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const targetTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', targetTheme);
+        localStorage.setItem('bcet-theme', targetTheme);
+        
+        document.getElementById('themeBtn').innerHTML = targetTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+    }
+
+    // PERSIST THEME PREFERENCE
+    const savedTheme = localStorage.getItem('bcet-theme') || 'light';
+    if(savedTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.getElementById('themeBtn').innerHTML = '☀️ Light Mode';
+    }
+
+    // CUSTOM MANIFESTO MOCK DATABASE ENGINE BASEMENT
+    const agendas = {
+        "Ramu": "Focusing on implementing advanced digital laboratories, deploying high-speed Wi-Fi infrastructures across blocks, and establishing AI research hubs within the campus node networks.",
+        "Laxman": "Aiming to upgrade sport complexes, organizing inter-college hackathons and continuous cultural fests, alongside building professional technical incubation workspace programs."
+    };
+
+    function openManifesto(e, name, symbol) {
+        e.preventDefault(); // Stop row clicks from toggling radio state immediately if needed
+        document.getElementById('mHeader').innerHTML = symbol + " " + name + "'s Vision";
+        document.getElementById('mBody').innerHTML = agendas[name] || "This candidate commits to building academic excellence and technological advancement models within the BCET engineering ecosystem network.";
+        document.getElementById('manifestoModal').style.display = 'flex';
+    }
+
+    function closeManifesto() {
+        document.getElementById('manifestoModal').style.display = 'none';
+    }
+
     {% if election_status == "OPEN" %}
     const targetDate = new Date("{{ settings.end_time }}").getTime();
     function updateCountdown() {
@@ -380,7 +493,6 @@
     setInterval(updateCountdown, 1000);
     updateCountdown();
 
-    // Original Mining Progress Bar Animation Logic
     const voteForm = document.getElementById('voteForm');
     const miningStatus = document.getElementById('mining-status');
     const progressBar = document.getElementById('progressBar');
