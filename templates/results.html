@@ -13,7 +13,6 @@
         .college-logo-admin { width: 70px; height: auto; margin-bottom: 10px; }
         .header-card h1 { margin: 0; font-size: 1.6rem; color: #1e293b; }
 
-        /* SECURITY BUTTON STYLING */
         .status-alert {
             background: #fffbeb;
             border: 1px solid #fef3c7;
@@ -32,13 +31,12 @@
         .section-card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e2e8f0; }
         .section-card h3 { margin-top: 0; margin-bottom: 20px; color: #1e293b; }
 
-        /* ANALYTICS STYLE */
         .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .stat-box { background: #f1f5f9; padding: 15px; border-radius: 15px; text-align: center; }
         .stat-label { font-size: 0.6rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
         .stat-value { font-size: 1.2rem; font-weight: 800; color: #1e293b; margin-top: 5px; }
 
-        /* FIXED RESPONSIVE CANDIDATE TALLY ROW */
+        /* RESPONSIVE CANDIDATE MANIFESTO ROW */
         .vote-row { 
             display: flex; 
             flex-direction: row;
@@ -52,10 +50,10 @@
             border-radius: 12px;
         }
         .input-box { padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.9rem; color: #1e293b; background: white; box-sizing: border-box; }
-        .name-input { flex: 2; min-width: 120px; font-weight: 600; }
-        .symbol-input { flex: 0.5; min-width: 50px; text-align: center; font-size: 1.2rem; }
+        .name-input { flex: 1.5; min-width: 100px; font-weight: 600; }
+        .symbol-input { flex: 0.5; min-width: 45px; text-align: center; font-size: 1.2rem; }
+        .manifesto-input { flex: 2.5; min-width: 150px; font-size: 0.85rem; }
         
-        /* High-Tech Badge look for counting to prevent screen cutting */
         .vote-count-display { 
             font-weight: 700; 
             color: white; 
@@ -77,7 +75,6 @@
         input[type="datetime-local"] { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; font-family: inherit; }
         label { font-size: 0.75rem; font-weight: 700; color: #64748b; }
 
-        /* --- PROFESSIONAL MENU STYLING --- */
         #menu-trigger {
             position: fixed; top: 20px; right: 20px;
             width: 45px; height: 45px; background: white;
@@ -172,11 +169,12 @@
     <div class="section-card">
         <h3>Candidate Management & Live Tally</h3>
         <div id="candidate-list">
-            {% for name, count in vote_counts.items() %}
+            {% for c in settings.candidates %}
             <div class="vote-row">
-                <input type="text" class="input-box name-input" value="{{ name }}">
-                <input type="text" class="input-box symbol-input" value="{% for c in settings.candidates %}{% if c.name == name %}{{ c.symbol }}{% endif %}{% endfor %}">
-                <div class="vote-count-display">{{ count }} Votes</div>
+                <input type="text" class="input-box name-input" value="{{ c.name }}">
+                <input type="text" class="input-box symbol-input" value="{{ c.symbol }}">
+                <input type="text" class="input-box manifesto-input" value="{{ c.manifesto }}" placeholder="Candidate Agenda/Manifesto">
+                <div class="vote-count-display">{{ vote_counts[c.name] }} Votes</div>
             </div>
             {% endfor %}
         </div>
@@ -230,7 +228,12 @@
     function addRow() {
         const div = document.createElement('div');
         div.className = 'vote-row';
-        div.innerHTML = '<input type="text" class="input-box name-input" placeholder="Name"><input type="text" class="input-box symbol-input" placeholder="👤"><div class="vote-count-display">0 Votes</div>';
+        div.innerHTML = `
+            <input type="text" class="input-box name-input" placeholder="Name">
+            <input type="text" class="input-box symbol-input" placeholder="👤">
+            <input type="text" class="input-box manifesto-input" placeholder="Candidate Agenda/Manifesto">
+            <div class="vote-count-display">0 Votes</div>
+        `;
         document.getElementById('candidate-list').appendChild(div);
     }
 
@@ -238,13 +241,14 @@
         const rows = document.querySelectorAll('.vote-row');
         const candidates = Array.from(rows).map(row => ({
             name: row.querySelector('.name-input').value,
-            symbol: row.querySelector('.symbol-input').value || "👤"
+            symbol: row.querySelector('.symbol-input').value || "👤",
+            manifesto: row.querySelector('.manifesto-input').value || "This candidate commits to building academic excellence models within the BCET engineering ecosystem network."
         }));
         fetch('/sync_candidates', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({candidates: candidates})
-        }).then(() => { alert("BCET Candidate List Synced!"); location.reload(); });
+        }).then(() => { alert("BCET Candidate List & Manifestos Synced!"); location.reload(); });
     }
 
     function updateTiming() {
@@ -258,6 +262,7 @@
         }).then(() => { alert("Timing Window Updated!"); location.reload(); });
     }
 
+    // Existing controller functions preserved safely
     function stopElection() {
         if(confirm("End election for BCET now?")) {
             fetch('/stop_election', { method: 'POST' }).then(() => location.reload());
