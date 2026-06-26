@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BCET | Blockchain E-Voting</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --blue-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -45,7 +45,7 @@
 
         .main-card {
             background: #ffffff;
-            width: 90%; max-width: 420px;
+            width: 90%; max-width: 440px;
             padding: 40px 30px;
             border-radius: 30px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.2);
@@ -121,8 +121,8 @@
             background: #fff5f5;
             border: 1px solid #ffe3e3;
             border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 30px;
+            padding: 12px;
+            margin-bottom: 25px;
         }
 
         .timer-label {
@@ -131,22 +131,80 @@
             color: #ef4444;
             text-transform: uppercase;
             letter-spacing: 1.2px;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
 
+        /* UPDATED TIMER DESIGN: Decreased size and professional clean font */
         .timer-value {
-            font-family: 'Playfair Display', serif !important;
-            font-size: 2.4rem;
+            font-family: monospace !important;
+            font-size: 1.6rem;
             color: #ef4444;
-            font-style: italic !important;
             font-weight: 700;
+            letter-spacing: 1px;
         }
 
-        .input-group { text-align: left; margin-bottom: 20px; }
-        
-        .styled-input {
-            width: 100%; padding: 15px; border: 1px solid #e2e8f0; border-radius: 15px;
-            background: #f8fafc; font-size: 0.9rem; box-sizing: border-box; color: #1e293b;
+        /* NEW RADIO CANDIDATE LIST LAYOUT */
+        .candidate-title-label {
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            text-align: left;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .candidate-list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .candidate-option-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .candidate-option-row:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .candidate-left-block {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .candidate-radio-input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-blue);
+            cursor: pointer;
+        }
+
+        .candidate-display-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .candidate-badge {
+            font-size: 0.65rem;
+            background: #e2e8f0;
+            color: #475569;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-weight: 600;
         }
 
         .voter-badge {
@@ -155,20 +213,22 @@
             border-radius: 12px;
             font-size: 0.85rem;
             color: #475569;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 8px;
         }
 
+        /* UPDATED CAST BALLOT ACTION BUTTON */
         .btn-confirm {
-            width: 100%; background: var(--accent-blue); color: white; padding: 18px;
+            width: 100%; background: var(--accent-blue); color: white; padding: 16px;
             border: none; border-radius: 15px; font-size: 1rem; font-weight: 600;
-            cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
+            cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.15);
+            letter-spacing: 0.5px;
         }
 
-        .btn-confirm:hover { transform: translateY(-2px); }
+        .btn-confirm:hover { transform: translateY(-1px); background: #1d4ed8; }
 
         .quote-container {
             margin-top: 25px;
@@ -238,12 +298,12 @@
             <div id="countdown" class="timer-value">00h 00m 00s</div>
         {% elif election_status == "NOT_STARTED" %}
             <div class="timer-label" style="color: #64748b;">Election Starts At:</div>
-            <div class="timer-value" style="color: #64748b; font-size: 1.5rem; font-style: normal !important;">
+            <div class="timer-value" style="color: #64748b; font-size: 1.2rem; font-family: sans-serif !important;">
                 {{ settings.start_time.replace('T', ' ') }}
             </div>
-        {% else %}
+        {%   else %}
             <div class="timer-label" style="color: #ef4444;">Election Status:</div>
-            <div class="timer-value" style="color: #ef4444; font-style: normal !important;">CLOSED</div>
+            <div class="timer-value" style="color: #ef4444;">CLOSED</div>
         {% endif %}
     </div>
 
@@ -258,16 +318,20 @@
     <form id="voteForm" action="/cast_vote" method="POST">
         <input type="hidden" name="student_id" value="{{ session['user_id'] }}">
 
-        <div class="input-group">
-            <select name="candidate" class="styled-input" required>
-                <option value="" disabled selected>Select Your Candidate</option>
-                {% for c in candidate_list %}
-                <option value="{{ c.name }}">{{ c.symbol }} {{ c.name }}</option>
-                {% endfor %}
-            </select>
+        <span class="candidate-title-label">Select Your Candidate</span>
+        <div class="candidate-list-container">
+            {% for c in candidate_list %}
+            <label class="candidate-option-row">
+                <div class="candidate-left-block">
+                    <input type="radio" name="candidate" value="{{ c.name }}" class="candidate-radio-input" required>
+                    <span class="candidate-display-name">{{ c.symbol }} {{ c.name }}</span>
+                </div>
+                <span class="candidate-badge">Official</span>
+            </label>
+            {% endfor %}
         </div>
 
-        <button type="submit" class="btn-confirm" id="confirmBtn">Confirm Secure Vote</button>
+        <button type="submit" class="btn-confirm" id="confirmBtn">Cast Ballot</button>
     </form>
 
     <div id="mining-status">
@@ -314,18 +378,15 @@
     setInterval(updateCountdown, 1000);
     updateCountdown();
 
-    // Logic for the Mining Animation
     const voteForm = document.getElementById('voteForm');
     const miningStatus = document.getElementById('mining-status');
     const progressBar = document.getElementById('progressBar');
     const confirmBtn = document.getElementById('confirmBtn');
 
     voteForm.addEventListener('submit', function() {
-        // Hide form button and show mining bar
         confirmBtn.style.display = 'none';
         miningStatus.style.display = 'block';
         
-        // Start progress bar animation
         setTimeout(() => {
             progressBar.style.width = '100%';
         }, 50);
