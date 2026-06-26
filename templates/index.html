@@ -7,27 +7,43 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            /* LIGHT MODE PRESETS MATCHING SCREENSHOT GLOWS */
+            --bg-gradient: linear-gradient(135deg, #e0e7ff 0%, #ede9fe 100%);
             --card-bg: #ffffff;
             --text-main: #1e293b;
             --text-sub: #64748b;
-            --border-color: #e2e8f0;
-            --box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            --border-color: rgba(99, 102, 241, 0.2);
             --dashboard-bg: #f8fafc;
-            --btn-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
-            --card-hover: #f1f5f9;
+            --btn-gradient: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+            --node-border: 1px solid rgba(34, 197, 94, 0.4);
+            --node-shadow: 0 0 10px rgba(34, 197, 94, 0.15);
+            --card-shadow: 0 0 15px rgba(99, 102, 241, 0.1);
+            --card-active-border: #3b82f6;
+            --card-active-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+            --timer-box-border: rgba(239, 68, 68, 0.3);
+            --timer-box-bg: rgba(239, 68, 68, 0.05);
+            --select-badge-bg: rgba(59, 130, 246, 0.1);
+            --select-badge-text: #2563eb;
         }
 
         [data-theme="dark"] {
+            /* DARK MODE EXACT MATCHING YOUR IMAGE BACKGROUNDS */
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            --card-bg: #1e293b;
+            --card-bg: #151f32;
             --text-main: #f8fafc;
             --text-sub: #94a3b8;
-            --border-color: #334155;
-            --box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            --dashboard-bg: #0f172a;
-            --btn-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-            --card-hover: #334155;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --dashboard-bg: #0d1527;
+            --btn-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            --node-border: 1px solid rgba(34, 197, 94, 0.3);
+            --node-shadow: 0 0 15px rgba(34, 197, 94, 0.25);
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --card-active-border: #3b82f6;
+            --card-active-shadow: 0 0 20px rgba(59, 130, 246, 0.45);
+            --timer-box-border: rgba(239, 68, 68, 0.4);
+            --timer-box-bg: #1a141b;
+            --select-badge-bg: rgba(255, 255, 255, 0.05);
+            --select-badge-text: #94a3b8;
         }
 
         body {
@@ -37,10 +53,10 @@
             display: flex; justify-content: center; align-items: center;
             min-height: 100vh;
             flex-direction: column;
-            transition: background 0.3s ease;
+            transition: all 0.3s ease;
         }
 
-        /* TOP ACTIONS BAR */
+        /* ACTIONS PANEL BAR */
         .top-bar {
             width: 100%;
             display: flex;
@@ -52,16 +68,15 @@
             top: 0;
         }
 
-        /* DARK MODE TOGGLE SWITCH */
         .theme-toggle {
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             color: white;
-            padding: 8px 12px;
-            border-radius: 10px;
+            padding: 8px 14px;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 0.9rem;
-            backdrop-filter: blur(5px);
+            font-size: 0.85rem;
+            backdrop-filter: blur(8px);
             display: flex;
             align-items: center;
             gap: 6px;
@@ -69,88 +84,113 @@
         }
 
         .logout-btn {
-            background: rgba(239, 68, 68, 0.2);
+            background: rgba(239, 68, 68, 0.15);
             color: #fca5a5;
             padding: 8px 15px;
-            border-radius: 10px;
+            border-radius: 12px;
             text-decoration: none;
             font-size: 0.8rem;
             font-weight: 600;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(239, 68, 68, 0.2);
         }
 
+        /* GLASS CARD CONTAINMENT container */
         .main-card {
             background: var(--card-bg);
-            width: 92%; max-width: 450px;
-            padding: 35px 25px;
-            border-radius: 24px;
-            box-shadow: var(--box-shadow);
+            width: 92%; max-width: 440px;
+            padding: 40px 24px;
+            border-radius: 28px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border-color);
             text-align: center;
-            position: relative;
             box-sizing: border-box;
-            transition: background 0.3s ease, box-shadow 0.3s ease;
-            margin-top: 60px;
-            margin-bottom: 30px;
+            transition: all 0.3s ease;
+            margin-top: 75px;
+            margin-bottom: 35px;
         }
 
         .college-logo {
-            width: 90px;
+            width: 85px;
             height: auto;
-            margin-bottom: 12px;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+            margin-bottom: 15px;
         }
 
-        h2 { font-size: 1.6rem; margin: 0; color: var(--text-main); font-weight: 800; }
-        .sub-heading { font-size: 0.75rem; color: var(--text-sub); margin-bottom: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        h2 { font-size: 1.7rem; margin: 0; color: var(--text-main); font-weight: 800; letter-spacing: -0.5px; }
+        .sub-heading { font-size: 0.75rem; color: var(--text-sub); margin-bottom: 24px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
 
-        /* INTERACTING BLOCKCHAIN SECURED UTILITY COMBINED CARD */
+        /* VOTER SECURITY IDENTITY NODE CONTAINER */
         .voter-identity-dashboard {
             background: var(--dashboard-bg);
-            padding: 14px 18px;
+            padding: 16px;
             border-radius: 16px;
-            margin-bottom: 15px;
-            border: 1px solid var(--border-color);
+            margin-bottom: 18px;
+            border: var(--node-border);
+            box-shadow: var(--node-shadow);
             text-align: left;
         }
-        .meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        .voter-badge-title { font-size: 0.65rem; color: var(--text-sub); font-weight: 800; text-transform: uppercase; }
+        .meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .voter-badge-title { font-size: 0.65rem; color: var(--text-sub); font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        /* Shield indicator and live pulsing icon */
         .crypto-shield-badge {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
             font-size: 0.65rem;
             font-weight: 700;
             color: #22c55e;
             background: rgba(34, 197, 94, 0.1);
-            padding: 2px 8px;
+            padding: 3px 10px;
             border-radius: 50px;
         }
-        .pulse-dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.6; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.6; } }
+        .pulse-dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; animation: pulse 1.6s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.8); opacity: 0.5; } 50% { transform: scale(1.3); opacity: 1; } 100% { transform: scale(0.8); opacity: 0.5; } }
 
-        .voter-main-id { font-size: 0.95rem; font-weight: 700; color: var(--text-main); }
-        .hash-chain-box { border-top: 1px dashed var(--border-color); margin-top: 8px; padding-top: 6px; }
+        .voter-main-id { font-size: 1.05rem; font-weight: 700; color: var(--text-main); letter-spacing: 0.5px; }
+        .hash-chain-box { border-top: 1px dashed var(--border-color); margin-top: 10px; padding-top: 8px; }
         .hash-chain-label { font-size: 0.55rem; color: var(--text-sub); font-weight: 700; text-transform: uppercase; }
-        .hash-chain-value { font-size: 0.65rem; font-family: monospace; color: #2563eb; word-break: break-all; margin: 2px 0 0 0; }
+        .hash-chain-value { font-size: 0.65rem; font-family: monospace; color: #3b82f6; word-break: break-all; margin: 2px 0 0 0; }
 
-        /* LIGHT MODERN FLIP/ALERT BOX FOR TIMER */
+        /* CHRISP SPLIT TIMER BOX PATTERN FROM IMAGE */
         .timer-strip {
-            background: rgba(239, 68, 68, 0.06);
-            border: 1px solid rgba(239, 68, 68, 0.15);
+            background: var(--timer-box-bg);
+            border: 1px solid var(--timer-box-border);
             border-radius: 14px;
             padding: 12px 16px;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .timer-strip-label { font-size: 0.7rem; font-weight: 800; color: #ef4444; text-transform: uppercase; letter-spacing: 0.5px; }
-        .timer-strip-value { font-family: monospace !important; font-size: 1.3rem; color: #ef4444; font-weight: 800; letter-spacing: 0.5px; }
+        .timer-strip-label { font-size: 0.75rem; font-weight: 800; color: #ef4444; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .timer-values-wrapper {
+            display: flex;
+            gap: 4px;
+        }
+        .time-block-box {
+            font-family: monospace !important;
+            font-size: 1.25rem;
+            color: #ef4444;
+            font-weight: 800;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
 
-        /* INTERACTIVE INTERFACE CANDIDATE CARDS */
+        .candidate-title-header {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            text-align: left;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        /* HIGH-TECH GLOW CARDS SPACE DESIGN */
         .candidate-grid-space {
             display: flex;
             flex-direction: column;
@@ -164,39 +204,34 @@
             padding: 14px 16px;
             background: var(--card-bg);
             border: 2px solid var(--border-color);
-            border-radius: 16px;
+            border-radius: 18px;
             cursor: pointer;
             position: relative;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             box-sizing: border-box;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
         }
 
+        /* NEON NESTED GLOW APPLIED TO BOTH LIGHT & DARK MODES */
         .interactive-card:hover {
-            background: var(--card-hover);
             transform: translateY(-2px);
+            border-color: rgba(59, 130, 246, 0.4);
         }
 
-        /* GLOWING EFFECT WHEN CHECKED */
         .interactive-card:has(input:checked) {
-            border-color: #2563eb;
-            background: rgba(37, 99, 235, 0.04);
-            box-shadow: 0 0 15px rgba(37, 99, 235, 0.15);
-        }
-        [data-theme="dark"] .interactive-card:has(input:checked) {
-            border-color: #3b82f6;
-            background: rgba(59, 130, 246, 0.08);
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+            border-color: var(--card-active-border);
+            background: rgba(59, 130, 246, 0.03);
+            box-shadow: var(--card-active-shadow);
         }
 
         .hidden-radio {
             position: absolute;
-            opacity: 0;
-            width: 0; height: 0;
+            opacity: 0; width: 0; height: 0;
         }
 
-        /* CUSTOM CHECK CIRCLE GLOW INDICATOR */
+        /* RADIAL SELECTIVE CIRCLE ELEMENT */
         .custom-indicator-circle {
-            width: 20px; height: 20px;
+            width: 22px; height: 22px;
             border: 2px solid var(--border-color);
             border-radius: 50%;
             margin-right: 14px;
@@ -205,23 +240,23 @@
             justify-content: center;
             transition: all 0.2s ease;
             flex-shrink: 0;
+            background: transparent;
         }
         .interactive-card:has(input:checked) .custom-indicator-circle {
-            border-color: #2563eb;
-            background: #2563eb;
+            border-color: #3b82f6;
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
         }
-        .custom-indicator-circle::after {
-            content: '';
-            width: 8px; height: 8px;
-            background: white;
+        .custom-indicator-inner {
+            width: 10px; height: 10px;
             border-radius: 50%;
-            display: none;
+            background: #3b82f6;
+            transform: scale(0);
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .interactive-card:has(input:checked) .custom-indicator-circle::after {
-            display: block;
+        .interactive-card:has(input:checked) .custom-indicator-inner {
+            transform: scale(1);
         }
 
-        /* PROFILE PIC LAYOUT SETUP */
         .avatar-frame {
             width: 44px; height: 44px;
             border-radius: 50%;
@@ -233,6 +268,11 @@
             margin-right: 14px;
             border: 1px solid var(--border-color);
             flex-shrink: 0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .interactive-card:has(input:checked) .avatar-frame {
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
         }
 
         .candidate-details-block {
@@ -241,76 +281,84 @@
         }
 
         .candidate-card-name {
-            font-size: 1rem;
+            font-size: 1.05rem;
             font-weight: 700;
             color: var(--text-main);
-            margin: 0 0 2px 0;
+            margin: 0 0 1px 0;
             display: block;
         }
 
-        /* VIEW MANIFESTO LINK MECHANISMS */
         .manifesto-trigger-link {
-            font-size: 0.7rem;
-            color: #2563eb;
+            font-size: 0.75rem;
+            color: #3b82f6;
             text-decoration: none;
             font-weight: 600;
             cursor: pointer;
         }
         .manifesto-trigger-link:hover { text-decoration: underline; }
 
-        .official-badge-tag {
-            font-size: 0.6rem;
-            background: var(--dashboard-bg);
-            color: var(--text-sub);
-            padding: 4px 8px;
-            border-radius: 6px;
+        /* EXCLUSIVE SELECT/SELECTED BADGE RIGHT NODE */
+        .badge-select-status {
+            font-size: 0.7rem;
+            background: var(--select-badge-bg);
+            color: var(--select-badge-text);
+            padding: 6px 14px;
+            border-radius: 50px;
             font-weight: 700;
-            text-transform: uppercase;
             border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+        .interactive-card:has(input:checked) .badge-select-status {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+            content: "Selected";
         }
 
-        /* TRENDY CONTEMPORARY GRADIENT ACTION BUTTON */
+        /* GLOWING AMBIENT GRADIENT ACTION BUTTON */
         .btn-confirm-gradient {
             width: 100%;
             background: var(--btn-gradient);
             color: white;
             padding: 16px;
             border: none;
-            border-radius: 14px;
-            font-size: 1rem;
+            border-radius: 16px;
+            font-size: 1.05rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
             letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .btn-confirm-gradient:hover {
             transform: translateY(-1px);
-            box-shadow: 0 12px 24px rgba(124, 58, 237, 0.35);
-            filter: brightness(1.05);
+            box-shadow: 0 12px 28px rgba(37, 99, 235, 0.45);
+            filter: brightness(1.08);
         }
 
-        /* MINING LOADER PROGRESS ANIMATION BAR STYLE */
         #mining-status {
             display: none;
             margin-top: 20px;
-            padding: 15px;
+            padding: 16px;
             background: var(--dashboard-bg);
-            border-radius: 14px;
+            border-radius: 16px;
             border: 1px solid var(--border-color);
         }
-        .mining-text { font-size: 0.75rem; font-weight: 700; color: #2563eb; margin-bottom: 8px; }
+        .mining-text { font-size: 0.75rem; font-weight: 700; color: #3b82f6; margin-bottom: 8px; }
         .progress-bg { width: 100%; height: 6px; background: var(--border-color); border-radius: 10px; overflow: hidden; }
-        .progress-bar { width: 0%; height: 100%; background: #2563eb; transition: width 1.4s ease-in-out; }
+        .progress-bar { width: 0%; height: 100%; background: #3b82f6; transition: width 1.4s ease-in-out; }
 
-        /* COMPACT FOOTER ACTIONS */
-        .verify-link { display: inline-block; margin-top: 18px; color: #2563eb; text-decoration: none; font-weight: 700; font-size: 0.85rem; }
+        .verify-link { display: inline-block; margin-top: 18px; color: #3b82f6; text-decoration: none; font-weight: 700; font-size: 0.85rem; }
         .verify-link:hover { text-decoration: underline; }
         .quote-container { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color); }
         .quote-text { font-style: italic; color: var(--text-sub); font-size: 0.75rem; font-weight: 600; }
 
-        /* MANIFESTO POPUP SHEET MODAL LAYOUT */
+        /* MODAL POPUP FOR MANIFESTO VIEW */
         .manifesto-modal {
             display: none;
             position: fixed;
@@ -326,7 +374,7 @@
             padding: 25px;
             border-radius: 20px;
             width: 88%; max-width: 400px;
-            box-shadow: var(--box-shadow);
+            box-shadow: var(--card-shadow);
             text-align: left;
             border: 1px solid var(--border-color);
         }
@@ -338,7 +386,6 @@
 <body>
 
 <div class="top-bar">
-    <!-- DARK MODE INTERACTIVE ICON BUTTON CONTROLLER -->
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">
         🌙 Dark Mode
     </button>
@@ -351,7 +398,6 @@
     <h2>BCET E-Voting</h2>
     <div class="sub-heading">Blockchain-Secured Student Election</div>
 
-    <!-- COMBINED HIGH SECURITY DASHBOARD ELEMENT -->
     <div class="voter-identity-dashboard">
         <div class="meta-row">
             <span class="voter-badge-title">Voter ID Node Profile</span>
@@ -368,24 +414,28 @@
         </div>
     </div>
 
-    <!-- RE-DESIGNED CRISP COUNTDOWN WINDOW -->
     <div class="timer-strip">
         <span class="timer-strip-label">Time Remaining</span>
-        <div id="countdown" class="timer-strip-value">00h 00m 00s</div>
+        <div class="timer-values-wrapper" id="countdown-wrapper">
+            <span class="time-block-box" id="ch">00h</span>
+            <span class="time-block-box" id="cm">00m</span>
+            <span class="time-block-box" id="cs">00s</span>
+        </div>
     </div>
 
     {% if election_status == "OPEN" %}
     <form id="voteForm" action="/cast_vote" method="POST">
         <input type="hidden" name="student_id" value="{{ session['user_id'] }}">
 
-        <!-- HIGH TECH ACTIVE CARDS DISPLAY FOR NOMINEES -->
-        <span class="voter-badge-title" style="text-align: left; display: block; margin-bottom: 8px;">Official Ballot Nominees</span>
+        <span class="candidate-title-header">Select Your Candidate</span>
         <div class="candidate-grid-space">
             {% for c in candidate_list %}
-            <label class="interactive-card">
+            <label class="interactive-card" onclick="updateBadgeStates()">
                 <input type="radio" name="candidate" value="{{ c.name }}" class="hidden-radio" required>
                 
-                <div class="custom-indicator-circle"></div>
+                <div class="custom-indicator-circle">
+                    <div class="custom-indicator-inner"></div>
+                </div>
                 
                 <div class="avatar-frame">
                     {{ c.symbol }}
@@ -393,21 +443,21 @@
                 
                 <div class="candidate-details-block">
                     <span class="candidate-card-name">{{ c.name }}</span>
-                    <!-- DYNAMIC ACCESSIBILITY FOR MANIFESTO DIALOGS -->
-                    <span class="manifesto-trigger-link" onclick="openManifesto(event, '{{ c.name }}', '{{ c.symbol }}')">Read Manifesto →</span>
+                    <span class="manifesto-trigger-link" onclick="openManifesto(event, '{{ c.name }}', '{{ c.symbol }}')">View Manifesto</span>
                 </div>
                 
-                <span class="official-badge-tag">Official</span>
+                <span class="badge-select-status">Select</span>
             </label>
             {% endfor %}
         </div>
 
-        <!-- NEW RE-STYLED GRADIENT ACTION COMPONENT BUTTON -->
-        <button type="submit" class="btn-confirm-gradient" id="confirmBtn">Cast Ballot</button>
+        <button type="submit" class="btn-confirm-gradient" id="confirmBtn">
+            Cast Ballot 🛡️
+        </button>
     </form>
 
     <div id="mining-status">
-        <div class="mining-text">⛏️ ANCHORING BALLOT SECURELY INTO BLOCKCHAIN...</div>
+        <div class="mining-text">🔒 ANCHORING BALLOT SECURELY INTO BLOCKCHAIN...</div>
         <div class="progress-bg">
             <div class="progress-bar" id="progressBar"></div>
         </div>
@@ -418,14 +468,13 @@
     </div>
     {% endif %}
 
-    <a href="/audit" class="verify-link">Verify Vote Chain Receipt →</a>
+    <a href="/audit" class="verify-link">Verify Your Vote Receipt (Live)</a>
 
     <div class="quote-container">
         <p class="quote-text">" One Student — One Vote "</p>
     </div>
 </div>
 
-<!-- COMPACT DYNAMIC DIALOG MODAL SHEET FOR ELECTIVE AGENDA AGENDA -->
 <div id="manifestoModal" class="manifesto-modal">
     <div class="manifesto-content-box">
         <h3 class="manifesto-header" id="mHeader">Candidate Manifesto</h3>
@@ -435,7 +484,23 @@
 </div>
 
 <script>
-    // THEME CORE INTERACTIVE CONTROLLER FOR TOGGLING SYSTEM STATE
+    // CORE FUNCTION TO SWAP DYNAMIC SELECT/SELECTED BUTTON TEXT STATE
+    function updateBadgeStates() {
+        // Short timeout to let the browser register radio checked input change state
+        setTimeout(() => {
+            const cards = document.querySelectorAll('.interactive-card');
+            cards.forEach(card => {
+                const radio = card.querySelector('.hidden-radio');
+                const badge = card.querySelector('.badge-select-status');
+                if(radio.checked) {
+                    badge.innerHTML = 'Selected';
+                } else {
+                    badge.innerHTML = 'Select';
+                }
+            });
+        }, 10);
+    }
+
     function toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
         const targetTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -445,21 +510,23 @@
         document.getElementById('themeBtn').innerHTML = targetTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
     }
 
-    // PERSIST THEME PREFERENCE
-    const savedTheme = localStorage.getItem('bcet-theme') || 'light';
+    const savedTheme = localStorage.getItem('bcet-theme') || 'dark'; // Defaults beautifully to dark mode
     if(savedTheme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
         document.getElementById('themeBtn').innerHTML = '☀️ Light Mode';
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.getElementById('themeBtn').innerHTML = '🌙 Dark Mode';
     }
 
-    // CUSTOM MANIFESTO MOCK DATABASE ENGINE BASEMENT
     const agendas = {
         "Ramu": "Focusing on implementing advanced digital laboratories, deploying high-speed Wi-Fi infrastructures across blocks, and establishing AI research hubs within the campus node networks.",
         "Laxman": "Aiming to upgrade sport complexes, organizing inter-college hackathons and continuous cultural fests, alongside building professional technical incubation workspace programs."
     };
 
     function openManifesto(e, name, symbol) {
-        e.preventDefault(); // Stop row clicks from toggling radio state immediately if needed
+        e.preventDefault();
+        e.stopPropagation(); // Stops row select from triggering accidentally
         document.getElementById('mHeader').innerHTML = symbol + " " + name + "'s Vision";
         document.getElementById('mBody').innerHTML = agendas[name] || "This candidate commits to building academic excellence and technological advancement models within the BCET engineering ecosystem network.";
         document.getElementById('manifestoModal').style.display = 'flex';
@@ -476,7 +543,7 @@
         const difference = targetDate - now;
         
         if (difference <= 0) {
-            document.getElementById("countdown").innerHTML = "CLOSED";
+            document.getElementById("countdown-wrapper").innerHTML = "<span class='time-block-box' style='color:#ef4444; width:100%'>CLOSED</span>";
             return;
         }
 
@@ -484,10 +551,9 @@
         const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((difference % (1000 * 60)) / 1000);
         
-        document.getElementById("countdown").innerHTML = 
-            (hours < 10 ? "0" + hours : hours) + "h " + 
-            (minutes < 10 ? "0" + minutes : minutes) + "m " + 
-            (seconds < 10 ? "0" + seconds : seconds) + "s";
+        document.getElementById("ch").innerHTML = (hours < 10 ? "0" + hours : hours) + "h";
+        document.getElementById("cm").innerHTML = (minutes < 10 ? "0" + minutes : minutes) + "m";
+        document.getElementById("cs").innerHTML = (seconds < 10 ? "0" + seconds : seconds) + "s";
     }
 
     setInterval(updateCountdown, 1000);
