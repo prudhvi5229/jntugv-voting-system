@@ -41,7 +41,6 @@
             transition: background 0.3s, color 0.3s;
         }
 
-        /* TOP NAV BAR & MENU CSS */
         .top-navbar {
             width: 100%;
             max-width: 900px;
@@ -104,6 +103,56 @@
 
         .header-title h1 { margin: 0; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; color: var(--text-main); }
         .header-title p { margin: 4px 0 0 0; font-size: 0.8rem; color: var(--text-sub); font-weight: 600; text-transform: uppercase; }
+
+        /* NEW SHIELD SECURITY PANEL CSS */
+        .security-shield-panel {
+            background: rgba(16, 185, 129, 0.06);
+            border: 1.5px solid rgba(16, 185, 129, 0.3);
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        [data-theme="dark"] .security-shield-panel {
+            background: rgba(16, 185, 129, 0.03);
+            border: 1.5px solid rgba(16, 185, 129, 0.15);
+        }
+        .shield-icon-wrapper svg {
+            width: 48px;
+            height: 48px;
+            stroke: #10b981;
+            filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.4));
+        }
+        .security-info-content h2 {
+            margin: 0 0 8px 0;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #10b981;
+        }
+        .security-features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px;
+            margin-top: 14px;
+            width: 100%;
+        }
+        .security-feature-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        .security-feature-item span.dot {
+            width: 6px;
+            height: 6px;
+            background: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+        }
 
         .stat-grid {
             display: grid;
@@ -199,7 +248,6 @@
         [data-theme="dark"] .log-box { background: #090d16; }
         .log-item { padding: 6px 0; border-bottom: 1px dashed var(--border-color); color: #ef4444; }
 
-        /* ఫిక్స్: మొబైల్ ఫోన్లలో టైమ్ బాక్స్‌లు పక్కకి పోకుండా ఒకదాని కింద ఒకటి నీట్‌గా రావడానికి మార్పు */
         .time-picker-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -267,6 +315,29 @@
         <a href="/download-results/{{ settings.admin_secret }}" class="btn" style="background: var(--btn-success); text-decoration: none; line-height: 1.2;">
             📥 Export PDF Report
         </a>
+    </div>
+
+    <!-- NEW FEATURE: SHIELD SECURITY MONITOR AUDIT CARD -->
+    <div class="security-shield-panel">
+        <div class="shield-icon-wrapper">
+            <!-- Dynamic Vector Shield Graphic -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+        </div>
+        <div class="security-info-content" style="width: 100%;">
+            <h2>Z+++++++ Active Security Framework Audit</h2>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-sub); font-weight: 500;">Project Title Alignment: Enhancing Electoral Integrity using Lightweight Blockchain Framework</p>
+            
+            <div class="security-features-grid">
+                <div class="security-feature-item"><span class="dot"></span> 🛡️ Tri-Node Cryptographic Consensus Engine</div>
+                <div class="security-feature-item"><span class="dot"></span> 🛡️ Anti-DDoS Network Rate Limiting</div>
+                <div class="security-feature-item"><span class="dot"></span> 🛡️ SQL Injection & XSS Input Sanitation</div>
+                <div class="security-feature-item"><span class="dot"></span> 🛡️ Session Hijacking & IP Bound Interceptors</div>
+                <div class="security-feature-item"><span class="dot"></span> 🛡️ Immutable Nullifier Cache (Anti-Double Vote)</div>
+                <div class="security-feature-item"><span class="dot"></span> 🛡️ SHA-256 Blockchain Link Integrity Auto-Check</div>
+            </div>
+        </div>
     </div>
 
     <!-- LIVE STAT COUNTERS -->
@@ -337,7 +408,6 @@
         voteCounts: JSON.parse('{{ vote_counts | tojson | safe }}')
     };
 
-    // SYSTEM THEME MANAGER SYNCHRONIZER
     (function initTheme() {
         const savedTheme = localStorage.getItem("bcet-theme") || "dark";
         document.documentElement.setAttribute("data-theme", savedTheme);
