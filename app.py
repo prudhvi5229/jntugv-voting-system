@@ -4,47 +4,36 @@ import time
 from datetime import datetime
 import pytz
 from io import BytesIO
-import sqlite3 # Persistent Storage
-import re # Strict Input Sanitation
-import random # For OTP Generation
-import smtplib # For Sending Email OTP
+import sqlite3 
+import re 
+import random 
+import smtplib 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from werkzeug.security import generate_password_hash, check_password_hash # Secure Hashing
+from werkzeug.security import generate_password_hash, check_password_hash 
 from flask import Flask, render_template, request, jsonify, make_response, url_for, session, redirect
 
-# PDF Libraries
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
-
-# INITIALIZE FLASK WITH STATIC FOLDER SUPPORT
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.secret_key = "BCET_BLOCKCHAIN_2026_SECURE_ULTRA_PRO_MAX_Z_PLUS_DEEPCORE_IMMUTABLE_HARSH"
 
-# --- CONFIGURATION ---
 IST = pytz.timezone('Asia/Kolkata')
 ADMIN_SECRET = "BCET_ADMIN_PRO" 
 
-# --- PRODUCTION MAIL ENGINE INITIALIZATION ---
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 SENDER_EMAIL = "beharacollegeofengineering@gmail.com"
 SENDER_PASSWORD = "kgocjaossnrptfpp"
 
-# --- VOLATILE OTP MEMORY MATRIX ---
 SIGNUP_OTP_CACHE = {}  
 FORGOT_OTP_CACHE = {}  
 
-# --- ADVANCED SECURITY MEMORY MATRIX ---
 FAILED_ATTEMPTS = {} 
 MAX_FAILED_ATTEMPTS = 5
 RATE_LIMIT_TRACKER = {} 
 RATE_LIMIT_WINDOW = 10 
 MAX_REQUESTS_PER_WINDOW = 20 
-SYSTEM_FORENSIC_LOCKOUT = False # Critical Anti-Hacking Killswitch
+SYSTEM_FORENSIC_LOCKOUT = False 
 
-# --- AUTHORIZED STUDENT LIST Matrix ---
 AUTHORIZED_STUDENTS = [
     "24V11A0501", "24V11A0502", "24V11A0503", "24V11A0504", "24V11A0505",
     "24V11A0506", "24V11A0507", "24V11A0510", "24V11A0511", "24V11A0512",
@@ -88,7 +77,6 @@ ELECTION_SETTINGS = {
     "admin_secret": ADMIN_SECRET
 }
 
-# --- SECURE SMTP ENGINE DISPATCHER ---
 def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
     try:
         msg = MIMEMultipart()
@@ -107,7 +95,6 @@ def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
         print(f"SMTP Core Operational Error Alert: {e}")
         return False
 
-# --- LIGHTWEIGHT TRI-NODE MULTI-CONSENSUS BLOCKCHAIN CORE ---
 class CryptographicNode:
     def __init__(self, node_id):
         self.node_id = node_id
@@ -193,7 +180,6 @@ class MultiNodeConsensusEngine:
 
 consensus_blockchain = MultiNodeConsensusEngine()
 
-# --- HELPER SECURITY FUNCTIONS ---
 def get_client_ip():
     raw_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     return raw_ip.split(',')[0].strip() if raw_ip and ',' in raw_ip else request.remote_addr
@@ -217,8 +203,6 @@ def intercept_rate_limits():
         consensus_blockchain.log_intrusion("ANTI_DDOS_GATE", "Rate Limit Violation / Network Attack Blocked", client_ip)
         return "<h1>429 Too Many Requests. Anti-DDoS Lock Activated.</h1>", 429
     RATE_LIMIT_TRACKER[client_ip].append(current_time)
-
-# --- ROUTES ---
 
 @app.route('/welcome')
 def welcome():
@@ -258,8 +242,6 @@ def index():
                            settings=ELECTION_SETTINGS,
                            election_status=status)
 
-# --- BLOCKCHAIN AUTH TOKEN ROUTES ---
-
 @app.route('/auth_token_display')
 def auth_token_display():
     if 'user_id' not in session:
@@ -291,8 +273,6 @@ def verify_token():
     else:
         consensus_blockchain.log_intrusion(session.get('user_id'), "Token Guard Exception Triggered", get_client_ip())
         return render_template('token_verification_input.html', error="Invalid Token!")
-
-# --- AUTHENTICATION & NEW ASYNC OTP CORE MATRIX ---
 
 @app.route('/signup_page')
 def signup_page():
@@ -381,7 +361,6 @@ def login():
 def forgot_password_page():
     return render_template('forgot_password.html')
 
-# --- FORGOT PASS MODULE LAYER WITH DISCRETE OTP CHECKS ---
 @app.route('/send_forgot_otp', methods=['POST'])
 def send_forgot_otp():
     student_id = sanitize_input(request.form.get('student_id', '')).upper()
@@ -442,8 +421,6 @@ def logout():
     session.clear() 
     return redirect(url_for('welcome'))
 
-# --- VOTING & AUDIT CORE ENGINE ---
-
 @app.route('/cast_vote', methods=['POST'])
 def cast_vote():
     if 'user_id' not in session or not session.get('token_verified'):
@@ -503,8 +480,6 @@ def audit_portal():
             if result: break
     return render_template('audit.html', searched_id=searched_id, result=result)
 
-# --- ADVANCED DYNAMIC PANELS & CONTROL ASSIGNMENTS ---
-
 @app.route(f'/admin-results/{ADMIN_SECRET}')
 def admin_results():
     global SYSTEM_FORENSIC_LOCKOUT
@@ -525,7 +500,6 @@ def admin_results():
                             vote_counts=vote_counts, 
                             logs=consensus_blockchain.security_logs)
 
-# 1. Whitelist Voter Registry Page Route (FIXED: Handles admin_secret via argument)
 @app.route('/admin/voter-registry/<secret>')
 def dynamic_voter_registry_view(secret):
     if secret != ADMIN_SECRET:
@@ -548,7 +522,6 @@ def delete_student_live():
         return jsonify({"status": "success", "message": f"Voter Node [{target_id}] removed from Whitelist configurations."})
     return jsonify({"status": "error", "message": "Target identification parameter mapping resolution error."})
 
-# 2. Factory Profile Reset Page Route (FIXED: Handles admin_secret via argument)
 @app.route('/admin/factory-reset/<secret>')
 def dynamic_factory_reset_view(secret):
     if secret != ADMIN_SECRET:
@@ -567,7 +540,7 @@ def execute_node_flush():
     conn.close()
     return jsonify({"status": "success", "message": f"Database settings scrubbed for Student [{target_id}]. Safe for new sign-up execution."})
 
-# 3. Security Audit Page Route (FIXED: Handles admin_secret via argument to prevent 500 error)
+# FIXED ARGS SPECIFICATION FOR ENTIRE REMOVAL OF 500 ERROR ON THE AUDIT LAYOUT VIEW
 @app.route('/admin/security-audit/<secret>')
 def dynamic_security_audit_view(secret):
     if secret != ADMIN_SECRET:
@@ -607,7 +580,6 @@ def reset_election():
     consensus_blockchain.reset_engine()
     return jsonify({"status": "success"})
 
-# --- ORIGINAL REPORT EXPORT UTILITY PRESERVED AT 100% ---
 @app.route('/download-results/<secret>')
 def download_results(secret):
     if secret != ADMIN_SECRET:

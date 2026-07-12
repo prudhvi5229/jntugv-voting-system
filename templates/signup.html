@@ -114,10 +114,10 @@
                 <button type="button" class="toggle-btn" onclick="togglePassword('pwd_confirm')">👁️</button>
             </div>
 
-            <!-- FIXED: Directly binds to the secure async OTP method instead of ancient register handlers -->
             <button type="button" id="primarySubmitBtn" class="btn-register" onclick="handleInitialSignupRequest()">Register Account</button>
         </div>
 
+        <!-- FIXED WRAPPER ID TO BYPASS CACHE INJECTIONS -->
         <div id="otpVerificationSection" style="display: none; border-top: 2px dashed #e2e8f0; margin-top: 25px; padding-top: 20px;">
             <div class="input-group">
                 <span class="label-text" style="color: var(--accent-green);">Enter 6-Digit Email OTP</span>
@@ -224,6 +224,5 @@
         }
     }
 </script>
-
 </body>
 </html>
