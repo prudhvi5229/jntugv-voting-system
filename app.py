@@ -16,7 +16,7 @@ from reportlab.lib import colors
 
 # INITIALIZE FLASK WITH STATIC FOLDER SUPPORT
 app = Flask(__name__, static_url_path='/static', static_folder='static')
-app.secret_key = "BCET_BLOCKCHAIN_2026_SECURE_ULTRA_PRO_MAX_Z_PLUS_DEEPCORE"
+app.secret_key = "BCET_BLOCKCHAIN_2026_SECURE_ULTRA_PRO_MAX_Z_PLUS_DEEPCORE_IMMUTABLE_HARSH"
 
 # --- CONFIGURATION ---
 IST = pytz.timezone('Asia/Kolkata')
@@ -25,9 +25,10 @@ ADMIN_SECRET = "BCET_ADMIN_PRO"
 # --- ADVANCED SECURITY MEMORY MATRIX ---
 FAILED_ATTEMPTS = {} 
 MAX_FAILED_ATTEMPTS = 5
-RATE_LIMIT_TRACKER = {} # DDoS Protection Matrix
-RATE_LIMIT_WINDOW = 10 # Seconds
+RATE_LIMIT_TRACKER = {} 
+RATE_LIMIT_WINDOW = 10 
 MAX_REQUESTS_PER_WINDOW = 20 
+SYSTEM_FORENSIC_LOCKOUT = False # Critical Anti-Hacking Killswitch
 
 # --- AUTHORIZED STUDENT LIST ---
 AUTHORIZED_STUDENTS = [
@@ -49,7 +50,6 @@ AUTHORIZED_STUDENTS = [
     "25V15A0503", "25V15A0504"
 ]
 
-# --- PERSISTENCE: DATABASE SETUP ---
 def init_db():
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
@@ -107,7 +107,6 @@ class MultiNodeConsensusEngine:
         self.reset_engine()
 
     def reset_engine(self):
-        # 3 వేర్వేరు వర్చువల్ నోడ్స్ (Tri-Node Consensus Layout)
         self.nodes = {
             "Node_A": CryptographicNode("Node_A"),
             "Node_B": CryptographicNode("Node_B"),
@@ -125,7 +124,6 @@ class MultiNodeConsensusEngine:
             "ip": ip
         })
 
-    # ఓటు వేసినప్పుడు 3 నోడ్స్ కి ఒకేసారి సమాంతరంగా (Parallel) బ్రాడ్‌కాస్ట్ అవుతుంది
     def broadcast_transaction(self, vote_data):
         self.global_voter_count += 1
         for node_name, node_obj in self.nodes.items():
@@ -133,29 +131,34 @@ class MultiNodeConsensusEngine:
             prev_hash = node_obj.hash(last_block)
             node_obj.create_block(proof=123, previous_hash=prev_hash, votes=[vote_data])
 
-    # Z+++++++ MULTI-NODE CONSENSUS CHECK ALGORITHM
     def verify_consensus_and_tally(self, candidate_name):
-        tally_map = {"Node_A": 0, "Node_B": 0, "Node_C": 0}
-        valid_nodes_count = 0
+        global SYSTEM_FORENSIC_LOCKOUT
+        if SYSTEM_FORENSIC_LOCKOUT:
+            return -999
 
-        # Step 1: ప్రతి నోడ్ యొక్క ఇంటర్నల్ హాష్ లింక్ చెక్ చేస్తుంది
+        tally_map = {"Node_A": 0, "Node_B": 0, "Node_C": 0}
+        
+        # 1. Dynamic Crypto-Salty Ballot Obfuscation చెక్
+        target_ballot_hash = hashlib.sha256(f"{candidate_name}_BCET_BALLOT_SALT".encode()).hexdigest()
+
         for name, node in self.nodes.items():
             if node.is_node_valid():
-                valid_nodes_count += 1
-                # ఆ నోడ్ లో సదరు కాండిడేట్ కి ఉన్న ఓట్లను లెక్కిస్తుంది
                 for block in node.chain:
                     for v in block['votes']:
-                        if v['candidate'] == candidate_name:
+                        if v['ballot_hash'] == target_ballot_hash:
                             tally_map[name] += 1
+            else:
+                # 3. Automated Forensic Intrusion Lockout ట్రిగ్గర్ (హాష్ తెగితే)
+                SYSTEM_FORENSIC_LOCKOUT = True
+                return -999
 
-        # Step 2: 51% Attack Detection (కనీసం 2 నోడ్స్ హాష్ అగ్రీ అవ్వాలి)
         votes_list = list(tally_map.values())
-        # మెజారిటీ ఓటింగ్ కన్సెన్సస్ రూల్ (Consensus Check)
         majority_vote = max(set(votes_list), key=votes_list.count)
         
-        # ఒకవేళ ఏదైనా నోడ్ లో డేటా మారితే ఇంట్రూజన్ రికార్డ్ అవుతుంది
+        # 51% Attack చెక్ లేదా గ్లోబల్ కౌంట్ మిస్‌మ్యాచ్
         if votes_list.count(majority_vote) < 2 or len(self.nullifiers) != self.global_voter_count:
-            return -999 # Security Breach Signal Trigger
+            SYSTEM_FORENSIC_LOCKOUT = True
+            return -999
             
         return majority_vote
 
@@ -170,9 +173,12 @@ def sanitize_input(text):
     if not text: return ""
     return re.sub(r"[<>\'\"\\;=\\-]", "", str(text)).strip()
 
-# --- Anti-DDoS Interceptor ---
 @app.before_request
 def intercept_rate_limits():
+    global SYSTEM_FORENSIC_LOCKOUT
+    if SYSTEM_FORENSIC_LOCKOUT and not request.path.startswith('/admin-results'):
+        return "<h1>503 Service Unavailable: Cryptographic Forensic Lockout Active.</h1>", 503
+
     client_ip = get_client_ip()
     current_time = time.time()
     if client_ip not in RATE_LIMIT_TRACKER:
@@ -234,6 +240,8 @@ def auth_token_display():
     raw_data = f"{sid}{time.time()}{app.secret_key}"
     blockchain_token = hashlib.sha256(raw_data.encode()).hexdigest().upper()[:12]
     
+    # 2. Zero-Knowledge Multi-Token Binding సిగ్నేచర్ జెనరేషన్
+    session['binding_signature'] = hashlib.sha256(f"{sid}{get_client_ip()}{blockchain_token}".encode()).hexdigest()
     session['generated_token'] = blockchain_token
     session['token_verified'] = False 
     return render_template('auth_token_display.html', token=blockchain_token)
@@ -360,7 +368,13 @@ def cast_vote():
     candidate = sanitize_input(request.form.get('candidate'))
     user_ip = get_client_ip()
 
-    # Zero-Knowledge సాల్టెడ్ నల్లిఫైయర్ ప్రొటెక్షన్ లేయర్
+    # 2. Zero-Knowledge Multi-Token Binding వెరిఫికేషన్ లేయర్
+    expected_sig = hashlib.sha256(f"{student_id}{user_ip}{session.get('generated_token')}".encode()).hexdigest()
+    if session.get('binding_signature') != expected_sig:
+        consensus_blockchain.log_intrusion(student_id, "Cryptographic Packet Signature Mismatch! Tampering Blocked.", user_ip)
+        session.clear()
+        return "<h1>Security Intrusion Terminated.</h1>", 403
+
     nullifier = hashlib.sha256(f"{student_id}BCET_SALT_2026".encode()).hexdigest()
     if nullifier in consensus_blockchain.nullifiers:
         consensus_blockchain.log_intrusion(student_id, "Double Broadcast Transaction Packet Intercepted", user_ip)
@@ -372,8 +386,10 @@ def cast_vote():
     consensus_blockchain.nullifiers.add(nullifier)
     receipt_id = hashlib.sha256(str(time.time()).encode()).hexdigest().upper()[:12]
     
-    # మొత్తం 3 వర్చువల్ నోడ్స్ కి ఒకేసారి ఓటు బ్రాడ్‌కాస్ట్ అవుతుంది
-    vote_packet = {'candidate': candidate, 'receipt': receipt_id}
+    # 1. Dynamic Crypto-Salty Ballot Obfuscation హ్యాండ్లింగ్
+    secured_ballot_hash = hashlib.sha256(f"{candidate}_BCET_BALLOT_SALT".encode()).hexdigest()
+
+    vote_packet = {'ballot_hash': secured_ballot_hash, 'receipt': receipt_id}
     consensus_blockchain.broadcast_transaction(vote_packet)
     
     session.clear() 
@@ -384,12 +400,18 @@ def audit_portal():
     searched_id = sanitize_input(request.form.get('receipt', '')).upper()
     result = None
     if request.method == 'POST':
-        # మెజారిటీ నోడ్ (Node A) నుండి ట్రాన్సాక్షన్ ఆడిట్ వెరిఫై చేస్తుంది
         for block in consensus_blockchain.nodes["Node_A"].chain:
             for vote in block['votes']:
                 if vote.get('receipt') == searched_id:
+                    matched_candidate = "Unknown / Encrypted"
+                    for c in ELECTION_SETTINGS["candidates"]:
+                        check_hash = hashlib.sha256(f"{c['name']}_BCET_BALLOT_SALT".encode()).hexdigest()
+                        if vote['ballot_hash'] == check_hash:
+                            matched_candidate = c['name']
+                            break
+
                     result = {
-                        "candidate": vote['candidate'], 
+                        "candidate": matched_candidate, 
                         "timestamp": block['timestamp'], 
                         "block_index": block['index']
                     }
@@ -401,20 +423,18 @@ def audit_portal():
 
 @app.route(f'/admin-results/{ADMIN_SECRET}')
 def admin_results():
+    global SYSTEM_FORENSIC_LOCKOUT
     vote_counts = {}
-    security_breach_detected = False
 
     for c in ELECTION_SETTINGS["candidates"]:
-        # ప్రతి అడ్మిన్ పేజీ రీఫ్రెష్ కి 3 నోడ్స్ మధ్య Consensus ని కాలిక్యులేట్ చేస్తుంది
         tally = consensus_blockchain.verify_consensus_and_tally(c['name'])
         if tally == -999:
-            security_breach_detected = True
-            vote_counts[c['name']] = 0
+            vote_counts[c['name']] = "🔴 LOCKOUT ACTIVE"
         else:
             vote_counts[c['name']] = tally
 
-    if security_breach_detected:
-        consensus_blockchain.log_intrusion("TRI_NODE_CORE", "CRITICAL ALERT: 51% Node Attack Vector Detected!", get_client_ip())
+    if SYSTEM_FORENSIC_LOCKOUT:
+        consensus_blockchain.log_intrusion("TRI_NODE_CORE", "CRITICAL ATTEMPT: System Halted Due to Multi-Node Tampering!", get_client_ip())
 
     return render_template('results.html', 
                             settings=ELECTION_SETTINGS, 
@@ -449,6 +469,8 @@ def stop_election():
 
 @app.route('/reset_election', methods=['POST'])
 def reset_election():
+    global SYSTEM_FORENSIC_LOCKOUT
+    SYSTEM_FORENSIC_LOCKOUT = False
     consensus_blockchain.reset_engine()
     return jsonify({"status": "success"})
 
