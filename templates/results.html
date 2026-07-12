@@ -31,6 +31,36 @@
             padding: 40px 20px;
         }
 
+        /* TOP NAV BAR & MENU CSS */
+        .top-navbar {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0px 20px 0px;
+        }
+
+        .menu-burger {
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .menu-burger span {
+            display: block;
+            width: 24px;
+            height: 3px;
+            background-color: var(--text-main);
+            border-radius: 2px;
+            transition: 0.3s;
+        }
+
         .admin-wrapper {
             width: 100%;
             max-width: 900px;
@@ -167,6 +197,18 @@
 </head>
 <body>
 
+<!-- TOP NAVIGATION BAR WITH MENU -->
+<div class="top-navbar">
+    <div class="menu-burger" onclick="window.location.href='/'" title="Go to Voting Dashboard">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+    <div style="font-size: 0.85rem; font-weight: 700; background: rgba(239, 68, 68, 0.15); color: #fca5a5; padding: 8px 16px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.2);">
+        ADMIN_PRO_NODE
+    </div>
+</div>
+
 <div class="admin-wrapper">
     
     <!-- HEADER PANEL -->
@@ -243,17 +285,15 @@
 </div>
 
 <script>
-    // DYNAMIC GLOBAL INITIAL DATA CAPTURED FROM APP ENVIRONMENT
     let electionConfig = {
         candidates: JSON.parse('{{ settings.candidates | tojson | safe }}'),
         voteCounts: JSON.parse('{{ vote_counts | tojson | safe }}')
     };
 
-    // INITIAL SYSTEM DISPLAY RENDER CALL
     function bootControlPanel() {
         const totalBallots = Object.values(electionConfig.voteCounts).reduce((a, b) => a + b, 0);
         document.getElementById('total-votes').innerText = totalBallots;
-        document.getElementById('block-count').innerText = totalBallots + 1; // Genesis Block + Vote Blocks
+        document.getElementById('block-count').innerText = totalBallots + 1; 
         
         renderCandidateMatrix(totalBallots);
     }
@@ -272,7 +312,6 @@
                 <input type="text" class="input-field candidate-name" value="${candidate.name}" placeholder="Name" style="width: 100px;">
                 <input type="text" class="input-field candidate-symbol" value="${candidate.symbol}" placeholder="Symbol" style="width: 50px; text-align: center;">
                 
-                <!-- NATIVE DIRECT CLOUD PHOTO UPLOADER NODE -->
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <input type="file" accept="image/*" style="display: none;" id="file-input-${index}" onchange="processManifestoMediaUpload(this, ${index})">
                     <button type="button" class="upload-btn" onclick="document.getElementById('file-input-${index}').click()">
@@ -298,7 +337,7 @@
         });
     }
 
-    // IMGBB HIGH-SPEED CLOUD STORAGE STREAM UPLOADER Utility
+    // STABILIZED FREE CDN UPLOADER PIPELINE
     function processManifestoMediaUpload(input, index) {
         const assetFile = input.files[0];
         if (!assetFile) return;
@@ -309,31 +348,32 @@
         const packet = new FormData();
         packet.append("image", assetFile);
 
-        // IMGBB API PIPELINE TRANSPORTS BINARY DATA INTO STABLE WEB IMAGE BADGE URL
-        fetch("https://api.imgbb.com/1/upload?key=bcde3f5242abf7ba142b781f8f3c7eab", {
+        // FALLBACK STABLE API GATEWAY
+        fetch("https://api.imgbb.com/1/upload?key=8e610d47de3a1677c7c0060934d402b8", {
             method: "POST",
             body: packet
         })
-        .then(res => res.json())
+        .then(res => {
+            if(!res.ok) throw new Error("HTTP Rejection Network Code Status");
+            return res.json();
+        })
         .then(payload => {
-            if (payload.success) {
+            if (payload && payload.success) {
                 const CDN_Link = payload.data.url;
                 document.getElementById(`manifesto-url-${index}`).value = CDN_Link;
                 uploadIndicator.innerHTML = `<a href="${CDN_Link}" target="_blank" style="color: #22c55e; text-decoration: none; font-weight: 800;">✅ View</a>`;
-                alert("Visual Manifesto Photo synced into live production CDN servers successfully!");
             } else {
-                uploadIndicator.innerHTML = "<span style='color: #ef4444;'>❌ Failed</span>";
-                alert("Cloud transmission rejection error. Try a standard format image asset.");
+                throw new Error("Payload packet transmission structural missing parameters");
             }
         })
         .catch(err => {
-            console.error("Asset node exception:", err);
-            uploadIndicator.innerHTML = "<span style='color: #ef4444;'>❌ Error</span>";
+            console.error("Asset node exception standard trace logs:", err);
+            uploadIndicator.innerHTML = "<span style='color: #ef4444;'>❌ Failed</span>";
+            alert("Upload structural error. Please try converting to standard JPEG/PNG format or verify connection nodes.");
         });
     }
 
     function addNewCandidateRow() {
-        // Collect current states first to prevent input loss during matrix push reload
         synchronizeLocalConfigStates();
         electionConfig.candidates.push({ name: "", symbol: "👤", manifesto: "" });
         
@@ -409,7 +449,6 @@
         }
     }
 
-    // TRIGGER SYSTEM INIT ON SCREEN DRAW
     window.onload = bootControlPanel;
 </script>
 
