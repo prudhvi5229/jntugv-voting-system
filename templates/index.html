@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
+            /* LIGHT MODE PRESETS MATCHING SCREENSHOT GLOWS */
             --bg-gradient: linear-gradient(135deg, #e0e7ff 0%, #ede9fe 100%);
             --card-bg: #ffffff;
             --text-main: #1e293b;
@@ -26,6 +27,7 @@
         }
 
         [data-theme="dark"] {
+            /* DARK MODE EXACT MATCHING YOUR IMAGE BACKGROUNDS */
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
             --card-bg: #151f32;
             --text-main: #f8fafc;
@@ -54,6 +56,7 @@
             transition: all 0.3s ease;
         }
 
+        /* ACTIONS PANEL BAR */
         .top-bar {
             width: 100%;
             display: flex;
@@ -92,6 +95,7 @@
             border: 1px solid rgba(239, 68, 68, 0.2);
         }
 
+        /* GLASS CARD CONTAINMENT container */
         .main-card {
             background: var(--card-bg);
             width: 92%; max-width: 440px;
@@ -115,6 +119,7 @@
         h2 { font-size: 1.7rem; margin: 0; color: var(--text-main); font-weight: 800; letter-spacing: -0.5px; }
         .sub-heading { font-size: 0.75rem; color: var(--text-sub); margin-bottom: 24px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
 
+        /* VOTER SECURITY IDENTITY NODE CONTAINER */
         .voter-identity-dashboard {
             background: var(--dashboard-bg);
             padding: 16px;
@@ -146,6 +151,7 @@
         .hash-chain-label { font-size: 0.55rem; color: var(--text-sub); font-weight: 700; text-transform: uppercase; }
         .hash-chain-value { font-size: 0.65rem; font-family: monospace; color: #3b82f6; word-break: break-all; margin: 2px 0 0 0; }
 
+        /* CHRISP SPLIT TIMER BOX PATTERN FROM IMAGE */
         .timer-strip {
             background: var(--timer-box-bg);
             border: 1px solid var(--timer-box-border);
@@ -184,6 +190,7 @@
             display: block;
         }
 
+        /* HIGH-TECH GLOW CARDS SPACE DESIGN */
         .candidate-grid-space {
             display: flex;
             flex-direction: column;
@@ -205,6 +212,7 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.02);
         }
 
+        /* NEON NESTED GLOW APPLIED TO BOTH LIGHT & DARK MODES */
         .interactive-card:hover {
             transform: translateY(-2px);
             border-color: rgba(59, 130, 246, 0.4);
@@ -221,6 +229,7 @@
             opacity: 0; width: 0; height: 0;
         }
 
+        /* RADIAL SELECTIVE CIRCLE ELEMENT */
         .custom-indicator-circle {
             width: 22px; height: 22px;
             border: 2px solid var(--border-color);
@@ -288,6 +297,7 @@
         }
         .manifesto-trigger-link:hover { text-decoration: underline; }
 
+        /* EXCLUSIVE SELECT/SELECTED BADGE RIGHT NODE */
         .badge-select-status {
             font-size: 0.7rem;
             background: var(--select-badge-bg);
@@ -304,6 +314,7 @@
             border-color: #2563eb;
         }
 
+        /* GLOWING AMBIENT GRADIENT ACTION BUTTON */
         .btn-confirm-gradient {
             width: 100%;
             background: var(--btn-gradient);
@@ -346,6 +357,7 @@
         .quote-container { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color); }
         .quote-text { font-style: italic; color: var(--text-sub); font-size: 0.75rem; font-weight: 600; }
 
+        /* MODAL POPUP FOR VISUAL MANIFESTO VIEW */
         .manifesto-modal {
             display: none;
             position: fixed;
@@ -360,13 +372,12 @@
             color: var(--text-main);
             padding: 25px;
             border-radius: 20px;
-            width: 88%; max-width: 400px;
+            width: 88%; max-width: 450px;
             box-shadow: var(--card-shadow);
             text-align: left;
             border: 1px solid var(--border-color);
         }
         .manifesto-header { font-size: 1.2rem; font-weight: 800; margin-top: 0; color: var(--text-main); }
-        .manifesto-body { font-size: 0.9rem; line-height: 1.5; color: var(--text-sub); margin: 15px 0 20px 0; }
         .manifesto-close-btn { width: 100%; background: var(--dashboard-bg); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; }
     </style>
 </head>
@@ -430,7 +441,8 @@
                 
                 <div class="candidate-details-block">
                     <span class="candidate-card-name">{{ c.name }}</span>
-                    <span class="manifesto-trigger-link" onclick="openManifesto(event, '{{ c.name }}', '{{ c.symbol }}', '{{ c.manifesto | escape }}')">View Manifesto</span>
+                    <!-- COMPONENT: MEDIA STREAM DATA LINKED DYNAMICALLY FROM ADMIN -->
+                    <span class="manifesto-trigger-link" onclick="openManifesto(event, '{{ c.name }}', '{{ c.symbol }}', '{{ c.manifesto | escape }}')">View Manifesto 📄</span>
                 </div>
                 
                 <span class="badge-select-status">Select</span>
@@ -462,11 +474,17 @@
     </div>
 </div>
 
+<!-- MEDIA DETECTOR PORTAL MODAL VIEW INTERFACE -->
 <div id="manifestoModal" class="manifesto-modal">
     <div class="manifesto-content-box">
         <h3 class="manifesto-header" id="mHeader">Candidate Manifesto</h3>
-        <p class="manifesto-body" id="mBody">Loading agenda profile information...</p>
-        <button class="manifesto-close-btn" onclick="closeManifesto()">Dismiss Manifesto</button>
+        
+        <!-- డైనమిక్ మీడియా కంటైనర్ -->
+        <div id="mediaContainer" style="width: 100%; min-height: 220px; max-height: 400px; overflow-y: auto; margin: 15px 0; border-radius: 12px; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.02);">
+            <!-- Content Injected via JS Loop -->
+        </div>
+
+        <button class="manifesto-close-btn" onclick="closeManifesto()">Dismiss View</button>
     </div>
 </div>
 
@@ -504,11 +522,27 @@
         document.getElementById('themeBtn').innerHTML = '🌙 Dark Mode';
     }
 
-    function openManifesto(e, name, symbol, manifestoText) {
+    // MULTI-FORMAT MEDIA INTERPRETATION LAYER
+    function openManifesto(e, name, symbol, mediaUrl) {
         e.preventDefault();
         e.stopPropagation(); 
-        document.getElementById('mHeader').innerHTML = symbol + " " + name + "'s Vision";
-        document.getElementById('mBody').innerHTML = manifestoText || "This candidate commits to building excellence within the BCET ecosystem network.";
+        
+        document.getElementById('mHeader').innerHTML = symbol + " " + name + "'s Manifesto";
+        const container = document.getElementById('mediaContainer');
+        container.innerHTML = ""; 
+        
+        const trimmedUrl = mediaUrl.trim();
+        
+        if (!trimmedUrl) {
+            container.innerHTML = "<p style='color: var(--text-sub); font-size: 0.9rem;'>No asset uploaded by admin.</p>";
+        } 
+        else if (trimmedUrl.toLowerCase().endsWith('.pdf')) {
+            container.innerHTML = `<iframe src="${trimmedUrl}" style="width: 100%; height: 380px; border: none; border-radius: 8px;"></iframe>`;
+        } 
+        else {
+            container.innerHTML = `<img src="${trimmedUrl}" alt="${name} Asset" style="width: 100%; height: auto; max-height: 380px; object-fit: contain; border-radius: 8px;" onerror="this.src='', this.parentElement.innerHTML='<p style=\'color:#ef4444;padding:10px;font-size:0.85rem;\'>⚠️ Dynamic media load error. Verify network link structure.</p>'"/>`;
+        }
+        
         document.getElementById('manifestoModal').style.display = 'flex';
     }
 

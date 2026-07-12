@@ -52,18 +52,19 @@ def init_db():
 
 init_db()
 
-# --- UPDATED CANDIDATES WINDOW STRUCT WITH PERSISTENT TIMELINE ---
+# --- CANDIDATES CONFIG WITH PERSISTENT WINDOW & MEDIA SUPPORT ---
+# Note: Manifesto fields accept direct Image or PDF Web URLs from admin
 ELECTION_SETTINGS = {
     "candidates": [
         {
             "name": "Ramu", 
             "symbol": "🦁", 
-            "manifesto": "Focusing on implementing advanced digital laboratories, deploying high-speed Wi-Fi infrastructures across blocks, and establishing AI research hubs within the campus node networks."
+            "manifesto": "https://res.cloudinary.com/demo/image/upload/sample.jpg"
         }, 
         {
             "name": "Laxman", 
             "symbol": "🐘", 
-            "manifesto": "Aiming to upgrade sport complexes, organizing inter-college hackathons and continuous cultural fests, alongside building professional technical incubation workspace programs."
+            "manifesto": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
         }
     ],
     "start_time": "2026-06-26T12:01",
@@ -352,7 +353,7 @@ def clear_accounts():
     
     return jsonify({"status": "error", "message": "Unauthorized!"}), 403
 
-# --- MANIFESTO MANAGEMENT CONTROLLER ---
+# --- UPDATED MANIFESTO MANAGEMENT CONTROLLER FOR VISUAL MEDIA LINKS ---
 @app.route('/sync_candidates', methods=['POST'])
 def sync_candidates():
     incoming_data = request.json
@@ -362,7 +363,8 @@ def sync_candidates():
         updated_candidates.append({
             "name": c.get('name'),
             "symbol": c.get('symbol', '👤'),
-            "manifesto": c.get('manifesto', 'This candidate commits to building academic excellence and technological advancement models within the BCET engineering ecosystem network.')
+            # అడ్మిన్ ప్యానెల్ టెక్స్ట్ బాక్స్ నుండి వచ్చే ఇమేజ్/PDF వెబ్ URL ఇక్కడ స్టోర్ అవుతుంది
+            "manifesto": c.get('manifesto', '')
         })
         
     ELECTION_SETTINGS["candidates"] = updated_candidates
