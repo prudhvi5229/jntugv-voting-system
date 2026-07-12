@@ -94,7 +94,7 @@ def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
         msg = MIMEMultipart()
         msg['From'] = SENDER_EMAIL
         msg['To'] = target_email
-        msg['Subject'] = f"🛡️ BCET Secure Gatekeeper - OTP for {purpose}"
+        msg['Subject'] = f"Secure Gatekeeper - OTP for {purpose}"
         body = f"Hello Student,\n\nYour 6-Digit One-Time Password (OTP) for BCET Voting System {purpose} is: {otp_code}\n\nThis code is valid for 5 minutes only.\n\nRegards,\nBCET Blockchain Core Engine"
         msg.attach(MIMEText(body, 'plain'))
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
@@ -313,7 +313,7 @@ def send_signup_otp():
     cursor.execute("SELECT student_id FROM users WHERE student_id=?", (student_id,))
     if cursor.fetchone():
         conn.close()
-        return jsonify({"status": "error", "message": "ID already registered!"})
+        return jsonify({"status": "error", "message": "Already registered! Log in directly."})
     conn.close()
 
     otp = str(random.randint(100021, 999989))
@@ -525,9 +525,11 @@ def admin_results():
                             vote_counts=vote_counts, 
                             logs=consensus_blockchain.security_logs)
 
-# 1. New Standalone Whitelist Voter Registry Page Route
-@app.route(f'/admin/voter-registry/{ADMIN_SECRET}')
-def dynamic_voter_registry_view():
+# 1. Whitelist Voter Registry Page Route (FIXED: Handles admin_secret via argument)
+@app.route('/admin/voter-registry/<secret>')
+def dynamic_voter_registry_view(secret):
+    if secret != ADMIN_SECRET:
+        return "Unauthorized Core Request", 403
     return render_template('voter_registry.html', students=AUTHORIZED_STUDENTS, secret=ADMIN_SECRET)
 
 @app.route('/admin/add_student_live', methods=['POST'])
@@ -546,9 +548,11 @@ def delete_student_live():
         return jsonify({"status": "success", "message": f"Voter Node [{target_id}] removed from Whitelist configurations."})
     return jsonify({"status": "error", "message": "Target identification parameter mapping resolution error."})
 
-# 2. New Standalone Factory Profile Reset Page Route
-@app.route(f'/admin/factory-reset/{ADMIN_SECRET}')
-def dynamic_factory_reset_view():
+# 2. Factory Profile Reset Page Route (FIXED: Handles admin_secret via argument)
+@app.route('/admin/factory-reset/<secret>')
+def dynamic_factory_reset_view(secret):
+    if secret != ADMIN_SECRET:
+        return "Unauthorized Core Request", 403
     return render_template('factory_reset.html', secret=ADMIN_SECRET)
 
 @app.route('/admin/execute_node_flush', methods=['POST'])
@@ -563,10 +567,12 @@ def execute_node_flush():
     conn.close()
     return jsonify({"status": "success", "message": f"Database settings scrubbed for Student [{target_id}]. Safe for new sign-up execution."})
 
-# 3. New Dedicated Standalone Security Audit Documentation Page Route
-@app.route(f'/admin/security-audit/{ADMIN_SECRET}')
-def dynamic_security_audit_view():
-    return render_template('security_audit.html', secret=ADMIN_SECRET)
+# 3. Security Audit Page Route (FIXED: Handles admin_secret via argument to prevent 500 error)
+@app.route('/admin/security-audit/<secret>')
+def dynamic_security_audit_view(secret):
+    if secret != ADMIN_SECRET:
+        return "Unauthorized Core Request", 403
+    return render_template('security_audit.html', secret=ADMIN_SECRET, logs=consensus_blockchain.security_logs)
 
 @app.route('/sync_candidates', methods=['POST'])
 def sync_candidates():

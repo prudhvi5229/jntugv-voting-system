@@ -51,7 +51,6 @@
             position: relative;
         }
 
-        /* UPGRADED THREE-LINE BURGER INTERACTION STYLE FRAMEWORK */
         .menu-burger-wrapper {
             position: relative;
             display: inline-block;
@@ -118,7 +117,6 @@
             transition: all 0.2s ease;
         }
 
-        /* MAIN LAYOUT SPLIT: LEFT CONTROLS & RIGHT SECURITY HUB */
         .main-layout-container {
             width: 100%;
             max-width: 1000px;
@@ -131,13 +129,13 @@
             margin-bottom: 24px;
         }
 
-        /* SIDEBAR / ACCORDION MENU CSS */
+        /* SIDEBAR CONTAINER EXTENSION RULES */
         .right-security-sidebar {
             width: 100%;
             background: var(--card-bg);
             border: 1.5px solid rgba(16, 185, 129, 0.2);
             border-radius: 20px;
-            padding: 20px;
+            padding: 24px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.05);
             box-sizing: border-box;
             margin-bottom: 24px;
@@ -161,54 +159,6 @@
             font-size: 1.1rem;
             font-weight: 800;
             color: #10b981;
-        }
-
-        /* ACCORDION MENU ITEMS */
-        .accordion-item {
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            margin-bottom: 8px;
-            overflow: hidden;
-            background: var(--dashboard-bg);
-        }
-        .accordion-header {
-            padding: 12px 14px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            user-select: none;
-            transition: background 0.2s;
-        }
-        .accordion-header:hover {
-            background: rgba(16, 185, 129, 0.05);
-        }
-        .accordion-arrow {
-            font-size: 0.75rem;
-            transition: transform 0.2s ease;
-            color: var(--text-sub);
-        }
-        .accordion-content {
-            padding: 0 14px;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.2s ease-out, padding 0.2s ease;
-            font-size: 0.8rem;
-            color: var(--text-sub);
-            line-height: 1.4;
-            background: var(--card-bg);
-            border-top: 0px solid transparent;
-        }
-        .accordion-item.active .accordion-arrow {
-            transform: rotate(180deg);
-            color: #10b981;
-        }
-        .accordion-item.active .accordion-content {
-            padding: 12px 14px;
-            max-height: 200px;
-            border-top: 1px solid var(--border-color);
         }
 
         .admin-wrapper {
@@ -368,7 +318,6 @@
             display: block;
         }
 
-        /* Responsive Breakpoint Layout rules */
         @media (min-width: 850px) {
             .main-layout-container {
                 display: table;
@@ -390,7 +339,6 @@
 </head>
 <body>
 
-<!-- TOP NAVIGATION BAR UPGRADED WITH AN ADVANCED THREE-LINE INTERACTIVE MENU -->
 <div class="top-navbar">
     <div class="menu-burger-wrapper">
         <div class="menu-burger" onclick="toggleBurgerMenuDropdown()" title="Open System Core Redirection Panel">
@@ -407,13 +355,10 @@
     <button class="theme-toggle-btn" onclick="toggleSystemTheme()">🌓 Toggle Theme</button>
 </div>
 
-<!-- DYNAMIC SPLIT LAYOUT -->
 <div class="main-layout-container">
     
-    <!-- LEFT CONTROL SYSTEM PANEL -->
     <div class="left-content-area">
         <div class="admin-wrapper">
-            <!-- HEADER PANEL -->
             <div class="header-panel">
                 <div class="header-title">
                     <h1>BCET Control Hub</h1>
@@ -424,7 +369,6 @@
                 </a>
             </div>
 
-            <!-- LIVE STAT COUNTERS -->
             <div class="stat-grid">
                 <div class="stat-card">
                     <h3>Blockchain Verified Blocks</h3>
@@ -436,7 +380,6 @@
                 </div>
             </div>
 
-            <!-- TIMELINE MANAGEMENT MODULE -->
             <div class="control-box">
                 <div class="section-header">⏳ Election Window Constraints</div>
                 <div class="time-picker-row">
@@ -455,19 +398,15 @@
                 </div>
             </div>
 
-            <!-- CANDIDATE MANAGEMENT & LIVE TALLY -->
             <div class="control-box">
                 <div class="section-header">📋 Candidate Management & Live Tally</div>
-                <div id="candidate-container">
-                    <!-- Injected via JavaScript Loop -->
-                </div>
+                <div id="candidate-container"></div>
                 <div style="display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap;">
                     <button class="btn" style="background: #475569; flex-grow: 1; min-width: 150px;" onclick="addNewCandidateRow()">+ Add New Candidate Row</button>
                     <button class="btn" style="background: var(--btn-success); flex-grow: 2; min-width: 200px;" onclick="synchronizeCandidatesData()">Synchronize & Save List</button>
                 </div>
             </div>
 
-            <!-- INTRUSION LOG PANEL -->
             <div class="control-box">
                 <div class="section-header">🛡️ Network Intrusion & Double Vote Logs</div>
                 <div class="log-box" id="log-wrapper">
@@ -486,150 +425,24 @@
         </div>
     </div>
 
-    <!-- RIGHT SIDEBAR: Z+++++++ ACTIVE SECURITY FRAMEWORK AUDIT ACCORDION MENU -->
+    <!-- RIGHT SIDEBAR (FIXED: Accordion removed completely as requested in Pic 2) -->
     <div class="right-security-sidebar">
         <div class="sidebar-header">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
             </svg>
-            <h2>Security Core Audit</h2>
+            <h2>Voter Whitelist Center</h2>
         </div>
-        <p style="margin: -8px 0 16px 0; font-size: 0.75rem; color: var(--text-sub); font-weight: 500;">Framework Alignment: Enhancing Electoral Integrity using Lightweight Blockchain Framework</p>
-
-        <!-- ACCORDION ITEMS MATRIX (12 TOTAL ULTIMATE SECURITIES) -->
-        <div class="accordion-container">
-            
-            <div class="accordion-item">
-                <div class="accordion-header" onclick="toggleAccordion(this)">
-                    <span>🔒 Tri-Node Consensus Engine</span>
-                    <span class="accordion-arrow">🔽</span>
-                </div>
-                <div class="accordion-content">
-                    Votes are saved into three separate virtual database copies at the same time. If a hacker changes one copy, the other two copies instantly reject the change.
-                </div>
-            </div>
-
-            <div class="accordion-item">
-                <div class="accordion-header" onclick="toggleAccordion(this)">
-                    <span>🔒 Salty Ballot Obfuscation</span>
-                    <span class="accordion-arrow">🔽</span>
-                </div>
-                <div class="accordion-content">
-                    Candidate names are converted into encrypted secret codes before storing. Even the server owner cannot read who voted for whom inside the backend ledger.
-                </div>
-            </div>
-
-            <div class="accordion-item">
-                <div class="accordion-header" onclick="toggleAccordion(this)">
-                    <span>🔒 Zero-Knowledge Token Binding</span>
-                    <span class="accordion-arrow">🔽</span>
-                </div>
-                <div class="accordion-content">
-                    Locks your secret voting token directly to your phone's IP address and browser session. Nobody can steal your token to vote from another computer.
-                </div>
-            </div>
-
-            <div class="accordion-item">
-                <div class="accordion-header" onclick="toggleAccordion(this)">
-                    <span>🔒 Forensic Intrusion Lockout</span>
-                    <span class="accordion-arrow">🔽</span>
-                </div>
-                <div class="accordion-content">
-                    If the system detects a high-level hacking attempt or database modification, it automatically freezes the entire app completely to save data.
-                </div>
-            </div>
-
-            <div class="accordion-item">
-                <div class="accordion-header" onclick="toggleAccordion(this)">
-                    <span>🔒 Anti-DDoS Rate Limiting</span>
-                    <span class="accordion-arrow">🔽</span>
-                </div>
-                <div class="accordion-content">
-                    Blocks hackers or bad automated bots who try to send thousands of rapid requests to crash or slow down the college election server.
-                </div>
-            </div>
-
-            <div class="accordion-item">
-                <div class="accordion-header" onclick="toggleAccordion(this)">
-                    <span>🔒 SQLi & XSS Sanitation</span>
-                    <span class="accordion-arrow">🔽</span>
-                </div>
-                <div class="accordion-content">
-                    Cleans and scans all input fields like Hall Ticket and Passwords. It prevents hackers from injecting harmful script commands into our system.
-                </div>
-            </div>
-
-            <div class="accordion-item">
-                <div class="accordion-header" onclick="toggleAccordion(this)">
-                    <span>🔒 Session Hijack Interceptors</span>
-                    <span class="accordion-arrow">🔽</span>
-                </div>
-                <div class="accordion-content">
-                    If a logged-in student's network IP changes suddenly during the vote, the system recognizes it as a hack and automatically logs them out.
-                </div>
-            </div>
-
-            <div class="accordion-item">
-                <div class="accordion-header" onclick="toggleAccordion(this)">
-                    <span>🔒 Immutable Nullifier Cache</span>
-                    <span class="accordion-arrow">🔽</span>
-                </div>
-                <div class="accordion-content">
-                    Converts each student's ID into a one-time cryptographic lock. Once a student votes, their token is destroyed, making double voting 100% impossible.
-                </div>
-            </div>
-
-            <div class="accordion-item">
-                <div class="accordion-header" onclick="toggleAccordion(this)">
-                    <span>🔒 SHA-256 Link Integrity Auto-Check</span>
-                    <span class="accordion-arrow">🔽</span>
-                </div>
-                <div class="accordion-content">
-                    Every block is digitally glued to the block before it. If a hacker edits an old vote, the cryptographic chain link breaks and triggers a security error.
-                </div>
-            </div>
-
-            <div class="accordion-item">
-                <div class="accordion-header" onclick="toggleAccordion(this)">
-                    <span>🔒 Brute-Force IP Lockout</span>
-                    <span class="accordion-arrow">🔽</span>
-                </div>
-                <div class="accordion-content">
-                    If any user tries to guess a password and enters a wrong password 5 times, the server completely blocks that IP address from trying again.
-                </div>
-            </div>
-
-            <div class="accordion-item">
-                <div class="accordion-header" onclick="toggleAccordion(this)">
-                    <span>🔒 Master Override Routing Key</span>
-                    <span class="accordion-arrow">🔽</span>
-                </div>
-                <div class="accordion-content">
-                    Ensures that only the authorized college administrator can break an emergency forensic freeze and safely reboot the system using a secret key.
-                </div>
-            </div>
-
-            <div class="accordion-item">
-                <div class="accordion-header" onclick="toggleAccordion(this)">
-                    <span>🔒 Zero-Cloud Local Privacy</span>
-                    <span class="accordion-arrow">🔽</span>
-                </div>
-                <div class="accordion-content">
-                    No student photos or election data are uploaded to third-party public clouds. Everything is handled locally via encoded base64 text for total security.
-                </div>
-            </div>
-
-        </div>
-
-        <!-- NEWLY DEPLOYED INTERACTIVE VOTER REGISTRY GATEWAY REDIRECTION BOX -->
-        <div class="accordion-container" style="margin-top: 24px;">
-            <div style="border: 2px dashed #10b981; border-radius: 12px; padding: 16px; background: rgba(16, 185, 129, 0.02); box-sizing: border-box;">
-                <h4 style="margin: 0 0 8px 0; color: #10b981; font-weight: 800; font-size: 0.9rem;">⚙️ Whitelist Node Administrator Gateway</h4>
-                <p style="margin: 0 0 14px 0; font-size: 0.75rem; color: var(--text-sub); line-height: 1.4;">Open the dedicated configuration management layout panel page to perform instant dynamic student identity whitelisting.</p>
-                <a href="/admin/voter-registry/{{ settings.admin_secret }}" class="btn" style="background: var(--btn-success); font-size: 0.75rem; padding: 8px 14px; text-decoration: none; display: inline-block;">
-                    Open Voter Registry Control Page
-                </a>
-            </div>
+        <p style="margin: -8px 0 16px 0; font-size: 0.75rem; color: var(--text-sub); font-weight: 500; line-height: 1.4;">
+            Manage authorized credentials mapping buffers securely via the dedicated configuration panel page link below.
+        </p>
+        
+        <div style="border: 2px dashed #10b981; border-radius: 12px; padding: 16px; background: rgba(16, 185, 129, 0.02); box-sizing: border-box;">
+            <h4 style="margin: 0 0 8px 0; color: #10b981; font-weight: 800; font-size: 0.9rem;">⚙️ Whitelist Node Control</h4>
+            <p style="margin: 0 0 14px 0; font-size: 0.75rem; color: var(--text-sub); line-height: 1.4;">Open the full screen manager node page to copy, paste, add or remove authorized student hall tickets.</p>
+            <a href="/admin/voter-registry/{{ settings.admin_secret }}" class="btn" style="background: var(--btn-success); font-size: 0.75rem; padding: 8px 14px; text-decoration: none; display: inline-block;">
+                Open Voter Registry Control Page
+            </a>
         </div>
     </div>
 
@@ -646,7 +459,6 @@
         document.documentElement.setAttribute("data-theme", savedTheme);
     })();
 
-    function toggleTheme() { toggleSystemTheme(); }
     function toggleSystemTheme() {
         const currentTheme = document.documentElement.getAttribute("data-theme");
         const targetTheme = currentTheme === "dark" ? "light" : "dark";
@@ -654,7 +466,6 @@
         localStorage.setItem("bcet-theme", targetTheme);
     }
 
-    // BURGER DROPDOWN CONTROL INTERACTION METHOD
     function toggleBurgerMenuDropdown() {
         const dropdown = document.getElementById("burgerMenuDropdownContainer");
         dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
@@ -667,12 +478,6 @@
                 dropdowns[i].style.display = "none";
             }
         }
-    }
-
-    // ACCORDION MENU INTERACTIVE FUNCTION
-    function toggleAccordion(element) {
-        const item = element.parentElement;
-        item.classList.toggle('active');
     }
 
     function bootControlPanel() {
@@ -735,7 +540,6 @@
     function processLocalSymbolUpload(input, index) {
         const file = input.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = function () {
@@ -745,10 +549,10 @@
         };
     }
 
+    // REST OF JavaScript ALIGNMENTS 100% PRESERVED
     function processManifestoMediaUpload(input, index) {
         const file = input.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = function () {
@@ -761,7 +565,6 @@
     function addNewCandidateRow() {
         synchronizeLocalConfigStates();
         electionConfig.candidates.push({ name: "", symbol: "", manifesto: "" });
-        
         const currentTotal = Object.values(electionConfig.voteCounts).reduce((a, b) => a + b, 0);
         renderCandidateMatrix(currentTotal);
     }
@@ -769,21 +572,16 @@
     function synchronizeLocalConfigStates() {
         const rows = document.querySelectorAll('.candidate-row');
         electionConfig.candidates = [];
-        
         rows.forEach((row, i) => {
             const name = row.querySelector('.candidate-name').value.trim();
             const symbol = document.getElementById(`symbol-url-${i}`).value.trim();
             const manifesto = document.getElementById(`manifesto-url-${i}`).value.trim();
-            
-            if (name) {
-                electionConfig.candidates.push({ name, symbol, manifesto });
-            }
+            if (name) electionConfig.candidates.push({ name, symbol, manifesto });
         });
     }
 
     function synchronizeCandidatesData() {
         synchronizeLocalConfigStates();
-
         fetch('/sync_candidates', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -801,7 +599,6 @@
     function updateTimeWindow() {
         const start = document.getElementById('startTimeInput').value;
         const end = document.getElementById('endTimeInput').value;
-
         fetch('/update_timing', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -833,6 +630,5 @@
 
     window.onload = bootControlPanel;
 </script>
-
 </body>
 </html>

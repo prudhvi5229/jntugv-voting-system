@@ -114,10 +114,10 @@
                 <button type="button" class="toggle-btn" onclick="togglePassword('pwd_confirm')">👁️</button>
             </div>
 
+            <!-- FIXED: Directly binds to the secure async OTP method instead of ancient register handlers -->
             <button type="button" id="primarySubmitBtn" class="btn-register" onclick="handleInitialSignupRequest()">Register Account</button>
         </div>
 
-        <!-- HIDDEN SECURE DUAL-CHANNEL VALIDATION OTP IN-LINE FRAME -->
         <div id="otpVerificationSection" style="display: none; border-top: 2px dashed #e2e8f0; margin-top: 25px; padding-top: 20px;">
             <div class="input-group">
                 <span class="label-text" style="color: var(--accent-green);">Enter 6-Digit Email OTP</span>
@@ -161,7 +161,7 @@
             return;
         }
         
-        msgElement.innerText = "Processing security credentials & broadcasting verification token...";
+        msgElement.innerText = "Processing secure credentials & broadcasting verification token...";
         msgElement.style.background = "#f8fafc";
         msgElement.style.color = "#475569";
 
@@ -182,7 +182,6 @@
             msgElement.style.background = "#ecfdf5";
             msgElement.style.color = "#065f46";
             
-            // Un-hides secure token verification fields interactively
             document.getElementById('otpVerificationSection').style.display = 'block';
             document.getElementById('primarySubmitBtn').disabled = true;
             document.getElementById('primarySubmitBtn').style.background = "#cbd5e1";
