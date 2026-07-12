@@ -222,7 +222,7 @@
 </head>
 <body>
 
-<!-- TOP NAVIGATION BAR WITH WORKING BURGER & NIGHT MODE -->
+<!-- TOP NAVIGATION BAR WITH BURGER & NIGHT MODE -->
 <div class="top-navbar">
     <div class="menu-burger" onclick="window.location.href='/'" title="Go to Voting Dashboard">
         <span></span>
@@ -374,7 +374,7 @@
         });
     }
 
-    // 100% ఎర్రర్ లేని పబ్లిక్ ఓపెన్ క్లౌడ్ అప్‌లోడ్ ఇంజిన్
+    // 100% గ్యారంటీగా ఎలాంటి రిస్ట్రిక్షన్స్ లేని ఓపెన్ క్లౌడ్ గేట్‌వే
     function processManifestoMediaUpload(input, index) {
         const file = input.files[0];
         if (!file) return;
@@ -384,34 +384,30 @@
             uploadIndicator.innerHTML = "<span style='color: #3b82f6;'>⏳ uploading...</span>";
         }
 
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = function () {
-            const base64Data = reader.result.split(',')[1];
-            const packet = new FormData();
-            packet.append("image", base64Data);
+        const packet = new FormData();
+        packet.append("file", file);
 
-            fetch("https://api.imgbb.com/1/upload?key=6df39e2469a473ee16a3df78ef56b3e2", {
-                method: "POST",
-                body: packet
-            })
-            .then(res => res.json())
-            .then(payload => {
-                if (payload && payload.success) {
-                    const CDN_Link = payload.data.url;
-                    document.getElementById(`manifesto-url-${index}`).value = CDN_Link;
-                    if (uploadIndicator) {
-                        uploadIndicator.innerHTML = `<a href="${CDN_Link}" target="_blank" style="color: #22c55e; text-decoration: none; font-weight: 800;">✅ View</a>`;
-                    }
-                } else {
-                    throw new Error();
+        fetch("https://telegra.ph/upload", {
+            method: "POST",
+            body: packet
+        })
+        .then(res => res.json())
+        .then(payload => {
+            if (payload && payload[0] && payload[0].src) {
+                // టెలిగ్రాఫ్ ఓపెన్ సర్వర్ CDN లింక్ జనరేట్ అవుతుంది
+                const CDN_Link = "https://telegra.ph" + payload[0].src;
+                document.getElementById(`manifesto-url-${index}`).value = CDN_Link;
+                if (uploadIndicator) {
+                    uploadIndicator.innerHTML = `<a href="${CDN_Link}" target="_blank" style="color: #22c55e; text-decoration: none; font-weight: 800;">✅ View</a>`;
                 }
-            })
-            .catch(() => {
-                if (uploadIndicator) uploadIndicator.innerHTML = "<span style='color: #ef4444;'>❌ Failed</span>";
-                alert("Upload failed. Verify image file resolution or size constraints.");
-            });
-        };
+            } else {
+                throw new Error();
+            }
+        })
+        .catch(() => {
+            if (uploadIndicator) uploadIndicator.innerHTML = "<span style='color: #ef4444;'>❌ Failed</span>";
+            alert("Upload failed. Verify image format or size.");
+        });
     }
 
     function addNewCandidateRow() {
