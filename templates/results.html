@@ -7,15 +7,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
+            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-sub: #475569;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --dashboard-bg: #f1f5f9;
+            --btn-success: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            --btn-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            --btn-primary: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+        [data-theme="dark"] {
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #020617 100%);
             --card-bg: #1e293b;
             --text-main: #f8fafc;
             --text-sub: #94a3b8;
             --border-color: rgba(255, 255, 255, 0.08);
             --dashboard-bg: #0f172a;
-            --btn-success: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            --btn-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            --btn-primary: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
         }
 
         body {
@@ -29,9 +38,9 @@
             align-items: center;
             box-sizing: border-box;
             padding: 40px 20px;
+            transition: background 0.3s, color 0.3s;
         }
 
-        /* TOP NAV BAR & MENU CSS */
         .top-navbar {
             width: 100%;
             max-width: 900px;
@@ -58,7 +67,17 @@
             height: 3px;
             background-color: var(--text-main);
             border-radius: 2px;
-            transition: 0.3s;
+        }
+
+        .theme-toggle-btn {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.85rem;
         }
 
         .admin-wrapper {
@@ -77,10 +96,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         }
 
-        .header-title h1 { margin: 0; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; color: #f8fafc; }
+        .header-title h1 { margin: 0; font-size: 1.6rem; font-weight: 800; color: var(--text-main); }
         .header-title p { margin: 4px 0 0 0; font-size: 0.8rem; color: var(--text-sub); font-weight: 600; text-transform: uppercase; }
 
         .stat-grid {
@@ -96,7 +115,7 @@
             padding: 20px;
             text-align: center;
         }
-        .stat-card h3 { margin: 0; font-size: 0.8rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card h3 { margin: 0; font-size: 0.8rem; color: var(--text-sub); text-transform: uppercase; }
         .stat-card p { margin: 8px 0 0 0; font-size: 2rem; font-weight: 800; color: #3b82f6; }
 
         .control-box {
@@ -104,16 +123,12 @@
             border: 1px solid var(--border-color);
             border-radius: 20px;
             padding: 24px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
         }
 
         .section-header {
             font-size: 1.1rem;
             font-weight: 800;
             margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 12px;
         }
@@ -130,14 +145,15 @@
         }
 
         .input-field {
-            background: #090d16;
+            background: rgba(0,0,0,0.05);
             border: 1px solid var(--border-color);
-            color: white;
+            color: var(--text-main);
             padding: 10px 14px;
             border-radius: 10px;
             font-size: 0.9rem;
             font-weight: 600;
         }
+        [data-theme="dark"] .input-field { background: #090d16; }
 
         .btn {
             padding: 12px 20px;
@@ -146,39 +162,28 @@
             font-weight: 700;
             font-size: 0.9rem;
             cursor: pointer;
-            transition: all 0.2s ease;
             color: white;
         }
-        .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
 
-        .tally-bar-wrapper {
-            flex-grow: 1;
-            margin-left: 20px;
-        }
-        .tally-labels { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; }
-        .tally-progress-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden; }
-        .tally-progress-bar { height: 100%; background: #22c55e; border-radius: 10px; }
+        .tally-bar-wrapper { flex-grow: 1; margin-left: 20px; }
+        .tally-labels { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; }
+        .tally-progress-bg { width: 100%; height: 8px; background: rgba(0,0,0,0.05); border-radius: 10px; overflow: hidden; margin-top: 6px; }
+        [data-theme="dark"] .tally-progress-bg { background: rgba(255,255,255,0.05); }
+        .tally-progress-bar { height: 100%; background: #22c55e; }
 
         .log-box {
-            background: #090d16;
+            background: rgba(0,0,0,0.05);
             border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 14px;
             max-height: 200px;
             overflow-y: auto;
             font-family: monospace;
-            font-size: 0.8rem;
         }
-        .log-item { padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,0.05); color: #ef4444; }
+        [data-theme="dark"] .log-box { background: #090d16; }
 
-        .time-picker-row {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            margin-bottom: 20px;
-        }
+        .time-picker-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px; }
         .time-input-group { display: flex; flex-direction: column; gap: 6px; }
-        .time-input-group label { font-size: 0.75rem; color: var(--text-sub); font-weight: 700; text-transform: uppercase; }
 
         .upload-btn {
             background: #3b82f6; 
@@ -189,40 +194,31 @@
             font-weight: 600; 
             cursor: pointer; 
             font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 4px;
         }
     </style>
 </head>
 <body>
 
-<!-- TOP NAVIGATION BAR WITH WORKING BURGER MENU -->
+<!-- TOP NAVIGATION BAR WITH TOGGLE -->
 <div class="top-navbar">
     <div class="menu-burger" onclick="window.location.href='/'" title="Go to Voting Dashboard">
-        <span></span>
-        <span></span>
-        <span></span>
+        <span></span><span></span><span></span>
     </div>
-    <div style="font-size: 0.85rem; font-weight: 700; background: rgba(255, 255, 255, 0.05); color: var(--text-main); padding: 8px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
-        ADMIN_PRO_NODE
-    </div>
+    <button class="theme-toggle-btn" onclick="toggleSystemTheme()">🌓 Toggle Theme</button>
 </div>
 
 <div class="admin-wrapper">
     
-    <!-- HEADER PANEL -->
     <div class="header-panel">
         <div class="header-title">
             <h1>BCET Control Hub</h1>
             <p>Cryptographic Node: Active</p>
         </div>
-        <button class="btn" style="background: var(--btn-success);" onclick="alert('Exporting Report Module...')">
+        <a href="/download-results/{{ settings.admin_secret }}" class="btn" style="background: var(--btn-success); text-decoration: none; line-height: 1.2;">
             📥 Export PDF Report
-        </button>
+        </a>
     </div>
 
-    <!-- LIVE STAT COUNTERS -->
     <div class="stat-grid">
         <div class="stat-card">
             <h3>Blockchain Validated Blocks</h3>
@@ -234,16 +230,15 @@
         </div>
     </div>
 
-    <!-- TIMELINE MANAGEMENT MODULE -->
     <div class="control-box">
         <div class="section-header">⏳ Election Window Constraints</div>
         <div class="time-picker-row">
             <div class="time-input-group">
-                <label>Opening Threshold</label>
+                <label style="font-size: 0.75rem; color: var(--text-sub);">Opening Threshold</label>
                 <input type="datetime-local" id="startTimeInput" class="input-field" value="{{ settings.start_time }}">
             </div>
             <div class="time-input-group">
-                <label>Closing Threshold</label>
+                <label style="font-size: 0.75rem; color: var(--text-sub);">Closing Threshold</label>
                 <input type="datetime-local" id="endTimeInput" class="input-field" value="{{ settings.end_time }}">
             </div>
         </div>
@@ -253,27 +248,21 @@
         </div>
     </div>
 
-    <!-- CANDIDATE MANAGEMENT & LIVE TALLY -->
     <div class="control-box">
         <div class="section-header">📋 Candidate Management & Live Tally</div>
-        <div id="candidate-container">
-            <!-- Injected via JavaScript Loop -->
-        </div>
+        <div id="candidate-container"></div>
         <div style="display: flex; gap: 12px; margin-top: 18px;">
             <button class="btn" style="background: #475569; width: 40%;" onclick="addNewCandidateRow()">+ Add New Candidate Row</button>
             <button class="btn" style="background: var(--btn-success); width: 60%;" onclick="synchronizeCandidatesData()">Synchronize & Save List</button>
         </div>
     </div>
 
-    <!-- INTRUSION LOG PANEL -->
     <div class="control-box">
         <div class="section-header">🛡️ Network Intrusion & Double Vote Logs</div>
         <div class="log-box" id="log-wrapper">
             {% if logs %}
                 {% for log in logs %}
-                <div class="log-item">
-                    ⚠️ [ALERT] Student Node ID [{{ log.id }}] triggered a security exception: {{ log.reason }} @ {{ log.time }}
-                </div>
+                <div style="color: #ef4444; padding: 4px 0;">⚠️ [ALERT] Student Node ID [{{ log.id }}] triggered a security exception: {{ log.reason }} @ {{ log.time }}</div>
                 {% endfor %}
             {% else %}
                 <div style="color: #22c55e; font-weight: 600;">✓ Network status normal. No duplicate blockchain broadcast anomalies reported.</div>
@@ -290,11 +279,23 @@
         voteCounts: JSON.parse('{{ vote_counts | tojson | safe }}')
     };
 
+    // GLOBAL THEME INITIALIZATION SYSTEM
+    (function initTheme() {
+        const savedTheme = localStorage.getItem("bcet-theme") || "dark";
+        document.documentElement.setAttribute("data-theme", savedTheme);
+    })();
+
+    function toggleSystemTheme() {
+        const currentTheme = document.documentElement.getAttribute("data-theme");
+        const targetTheme = currentTheme === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", targetTheme);
+        localStorage.setItem("bcet-theme", targetTheme);
+    }
+
     function bootControlPanel() {
         const totalBallots = Object.values(electionConfig.voteCounts).reduce((a, b) => a + b, 0);
         document.getElementById('total-votes').innerText = totalBallots;
         document.getElementById('block-count').innerText = totalBallots + 1; 
-        
         renderCandidateMatrix(totalBallots);
     }
 
@@ -312,12 +313,9 @@
                 <input type="text" class="input-field candidate-name" value="${candidate.name}" placeholder="Name" style="width: 100px;">
                 <input type="text" class="input-field candidate-symbol" value="${candidate.symbol}" placeholder="Symbol" style="width: 50px; text-align: center;">
                 
-                <!-- LOCAL BACKEND FILE STORAGE UPLOADER -->
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <input type="file" accept="image/*" style="display: none;" id="file-input-${index}" onchange="processManifestoMediaUpload(this, ${index})">
-                    <button type="button" class="upload-btn" onclick="document.getElementById('file-input-${index}').click()">
-                        📸 Upload Photo
-                    </button>
+                    <button type="button" class="upload-btn" onclick="document.getElementById('file-input-${index}').click()">📸 Upload Photo</button>
                     <input type="hidden" class="candidate-manifesto-url" id="manifesto-url-${index}" value="${candidate.manifesto || ''}">
                     <span id="upload-status-${index}" style="font-size: 0.8rem; font-weight: 700; min-width: 45px;">
                         ${candidate.manifesto ? `<a href="${candidate.manifesto}" target="_blank" style="color: #22c55e; text-decoration: none;">✅ View</a>` : `<span style="color: #64748b;">No File</span>`}
@@ -338,45 +336,42 @@
         });
     }
 
-    // LOCAL SERVER MEDIA PIPELINE UPLOADER (NO THIRD PARTY REJECTIONS)
     function processManifestoMediaUpload(input, index) {
-        const assetFile = input.files[0];
-        if (!assetFile) return;
+        const file = input.files[0];
+        if (!file) return;
 
         const uploadIndicator = document.getElementById(`upload-status-${index}`);
-        uploadIndicator.innerHTML = "<span style='color: #3b82f6;'>⏳ uploading...</span>";
+        if (uploadIndicator) uploadIndicator.innerHTML = "<span style='color: #3b82f6;'>⏳ uploading...</span>";
 
-        const packet = new FormData();
-        packet.append("image", assetFile);
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function () {
+            const base64Data = reader.result.split(',')[1];
+            const packet = new FormData();
+            packet.append("image", base64Data);
 
-        fetch("/admin/upload_image", {
-            method: "POST",
-            body: packet
-        })
-        .then(res => {
-            if(!res.ok) throw new Error("Server Error");
-            return res.json();
-        })
-        .then(payload => {
-            if (payload && payload.success) {
-                const Local_Link = payload.url;
-                document.getElementById(`manifesto-url-${index}`).value = Local_Link;
-                uploadIndicator.innerHTML = `<a href="${Local_Link}" target="_blank" style="color: #22c55e; text-decoration: none; font-weight: 800;">✅ View</a>`;
-            } else {
-                throw new Error();
-            }
-        })
-        .catch(err => {
-            console.error("Local Storage sync trace error:", err);
-            uploadIndicator.innerHTML = "<span style='color: #ef4444;'>❌ Failed</span>";
-            alert("Storage upload pipeline failed. Standardize file asset dimensions.");
-        });
+            fetch("https://api.imgbb.com/1/upload?key=6cb840f666b6cfa46dbb71853d92fb9c", {
+                method: "POST",
+                body: packet
+            })
+            .then(res => res.json())
+            .then(payload => {
+                if (payload && payload.success) {
+                    const CDN_Link = payload.data.url;
+                    document.getElementById(`manifesto-url-${index}`).value = CDN_Link;
+                    if (uploadIndicator) uploadIndicator.innerHTML = `<a href="${CDN_Link}" target="_blank" style="color: #22c55e; text-decoration: none; font-weight: 800;">✅ View</a>`;
+                } else { throw new Error(); }
+            })
+            .catch(() => {
+                if (uploadIndicator) uploadIndicator.innerHTML = "<span style='color: #ef4444;'>❌ Failed</span>";
+                alert("Upload failed. Verify cloud server parameters.");
+            });
+        };
     }
 
     function addNewCandidateRow() {
         synchronizeLocalConfigStates();
         electionConfig.candidates.push({ name: "", symbol: "👤", manifesto: "" });
-        
         const currentTotal = Object.values(electionConfig.voteCounts).reduce((a, b) => a + b, 0);
         renderCandidateMatrix(currentTotal);
     }
@@ -384,21 +379,16 @@
     function synchronizeLocalConfigStates() {
         const rows = document.querySelectorAll('.candidate-row');
         electionConfig.candidates = [];
-        
         rows.forEach((row, i) => {
             const name = row.querySelector('.candidate-name').value.trim();
             const symbol = row.querySelector('.candidate-symbol').value.trim();
             const manifesto = document.getElementById(`manifesto-url-${i}`).value.trim();
-            
-            if (name) {
-                electionConfig.candidates.push({ name, symbol, manifesto });
-            }
+            if (name) electionConfig.candidates.push({ name, symbol, manifesto });
         });
     }
 
     function synchronizeCandidatesData() {
         synchronizeLocalConfigStates();
-
         fetch('/sync_candidates', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -407,7 +397,7 @@
         .then(res => res.json())
         .then(data => {
             if (data.status === "success") {
-                alert("Candidate structure updated into server storage environment.");
+                alert("Success! Candidate structure matrix updated live into server memory.");
                 window.location.reload();
             }
         });
@@ -416,38 +406,24 @@
     function updateTimeWindow() {
         const start = document.getElementById('startTimeInput').value;
         const end = document.getElementById('endTimeInput').value;
-
         fetch('/update_timing', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ start, end })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if(data.status === "success") alert("Time thresholds aligned correctly!");
-        });
+        }).then(() => alert("Time constraints shifted successfully!"));
     }
 
     function emergencyShutdown() {
-        fetch('/stop_election', { method: 'POST' })
-        .then(res => res.json())
-        .then(data => {
-            if(data.status === "success") alert("LOCKOUT ACTIVATED.");
-        });
+        fetch('/stop_election', { method: 'POST' }).then(() => alert("LOCKOUT ACTIVATED."));
     }
 
     function resetBlockchainState() {
-        if(confirm("CRITICAL WARNING: This action flushes out all transaction blocks permanently. Continue?")) {
-            fetch('/reset_election', { method: 'POST' })
-            .then(res => res.json())
-            .then(data => {
-                if(data.status === "success") window.location.reload();
-            });
+        if(confirm("CRITICAL WARNING: Permanent flush sequence?")) {
+            fetch('/reset_election', { method: 'POST' }).then(() => window.location.reload());
         }
     }
 
     window.onload = bootControlPanel;
 </script>
-
 </body>
 </html>

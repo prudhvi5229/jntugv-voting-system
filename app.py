@@ -5,9 +5,7 @@ from datetime import datetime
 import pytz
 from io import BytesIO
 import sqlite3 # Persistent Storage
-import os
 from werkzeug.security import generate_password_hash, check_password_hash # Secure Hashing
-from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, jsonify, make_response, url_for, session, redirect
 
 # PDF Libraries
@@ -18,11 +16,6 @@ from reportlab.lib import colors
 # INITIALIZE FLASK WITH STATIC FOLDER SUPPORT
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.secret_key = "BCET_BLOCKCHAIN_2026_SECURE"
-
-# --- LOCAL STORAGE FOR IMAGES ---
-UPLOAD_FOLDER = os.path.join('static', 'uploads')
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # --- CONFIGURATION ---
 IST = pytz.timezone('Asia/Kolkata')
@@ -359,21 +352,7 @@ def clear_accounts():
     
     return jsonify({"status": "error", "message": "Unauthorized!"}), 403
 
-# --- NATIVE FILE UPLOADER CONTROL ROUTE ---
-@app.route('/admin/upload_image', methods=['POST'])
-def admin_upload_image():
-    if 'image' not in request.files:
-        return jsonify({"success": False, "error": "No file element"}), 400
-    file = request.files['image']
-    if file.filename == '':
-        return jsonify({"success": False, "error": "No selected file"}), 400
-    if file:
-        filename = secure_filename(f"manifesto_{int(time.time())}_{file.filename}")
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-        return jsonify({"success": True, "url": f"/static/uploads/{filename}"})
-    return jsonify({"success": False, "error": "Upload failed"}), 500
-
+# --- FIXED MANIFESTO INTERCEPTOR SYNC PARAMETER ---
 @app.route('/sync_candidates', methods=['POST'])
 def sync_candidates():
     incoming_data = request.json
@@ -383,7 +362,8 @@ def sync_candidates():
         updated_candidates.append({
             "name": c.get('name'),
             "symbol": c.get('symbol', '👤'),
-            "manifesto": c.get('manifesto', '')
+            # ఫిక్స్: ఇక్కడ డిఫాల్ట్ హార్డ్-కోడెడ్ టెక్స్ట్‌ని తీసేసి, results.html నుండి వచ్చే ImgBB ఫోటో లింక్‌ని డైరెక్ట్‌గా యాక్సెప్ట్ చేస్తున్నాం.
+            "manifesto": c.get('manifesto', '') 
         })
         
     ELECTION_SETTINGS["candidates"] = updated_candidates
