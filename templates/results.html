@@ -48,13 +48,20 @@
             justify-content: space-between;
             align-items: center;
             padding: 10px 0px 20px 0px;
+            position: relative;
+        }
+
+        /* UPGRADED THREE-LINE BURGER INTERACTION STYLE FRAMEWORK */
+        .menu-burger-wrapper {
+            position: relative;
+            display: inline-block;
         }
 
         .menu-burger {
             cursor: pointer;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 5px;
             background: rgba(255, 255, 255, 0.05);
             padding: 12px;
             border-radius: 10px;
@@ -68,6 +75,35 @@
             background-color: var(--text-main);
             border-radius: 2px;
             transition: 0.3s;
+        }
+
+        .burger-dropdown-content {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 50px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            min-width: 260px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border-radius: 12px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .burger-dropdown-content a {
+            color: var(--text-main);
+            padding: 14px 16px;
+            text-decoration: none;
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+        }
+
+        .burger-dropdown-content a:hover {
+            background: rgba(16, 185, 129, 0.1);
         }
 
         .theme-toggle-btn {
@@ -300,7 +336,7 @@
         .time-input-group label { font-size: 0.75rem; color: var(--text-sub); font-weight: 700; text-transform: uppercase; }
 
         .upload-btn {
-            background: #3b82f6; 
+            background: #8b5cf6; 
             color: white; 
             border: none; 
             padding: 8px 12px; 
@@ -354,12 +390,19 @@
 </head>
 <body>
 
-<!-- TOP NAVIGATION BAR -->
+<!-- TOP NAVIGATION BAR UPGRADED WITH AN ADVANCED THREE-LINE INTERACTIVE MENU -->
 <div class="top-navbar">
-    <div class="menu-burger" onclick="window.location.href='/'" title="Go to Voting Dashboard">
-        <span></span>
-        <span></span>
-        <span></span>
+    <div class="menu-burger-wrapper">
+        <div class="menu-burger" onclick="toggleBurgerMenuDropdown()" title="Open System Core Redirection Panel">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <div class="burger-dropdown-content" id="burgerMenuDropdownContainer">
+            <a href="/">🏠 Home Dashboard</a>
+            <a href="/admin/security-audit/{{ settings.admin_secret }}">🛡️ Security Core Audit Page</a>
+            <a href="/admin/factory-reset/{{ settings.admin_secret }}">⚙️ Voter Node Factory Reset</a>
+        </div>
     </div>
     <button class="theme-toggle-btn" onclick="toggleSystemTheme()">🌓 Toggle Theme</button>
 </div>
@@ -384,7 +427,7 @@
             <!-- LIVE STAT COUNTERS -->
             <div class="stat-grid">
                 <div class="stat-card">
-                    <h3>Blockchain Validated Blocks</h3>
+                    <h3>Blockchain Verified Blocks</h3>
                     <p id="block-count">Initializing...</p>
                 </div>
                 <div class="stat-card">
@@ -546,7 +589,6 @@
                 </div>
             </div>
 
-            <!-- ADDITIONAL ULTRA-ADVANCED EXTRA SECURITY CORES -->
             <div class="accordion-item">
                 <div class="accordion-header" onclick="toggleAccordion(this)">
                     <span>🔒 Brute-Force IP Lockout</span>
@@ -578,6 +620,17 @@
             </div>
 
         </div>
+
+        <!-- NEWLY DEPLOYED INTERACTIVE VOTER REGISTRY GATEWAY REDIRECTION BOX -->
+        <div class="accordion-container" style="margin-top: 24px;">
+            <div style="border: 2px dashed #10b981; border-radius: 12px; padding: 16px; background: rgba(16, 185, 129, 0.02); box-sizing: border-box;">
+                <h4 style="margin: 0 0 8px 0; color: #10b981; font-weight: 800; font-size: 0.9rem;">⚙️ Whitelist Node Administrator Gateway</h4>
+                <p style="margin: 0 0 14px 0; font-size: 0.75rem; color: var(--text-sub); line-height: 1.4;">Open the dedicated configuration management layout panel page to perform instant dynamic student identity whitelisting.</p>
+                <a href="/admin/voter-registry/{{ settings.admin_secret }}" class="btn" style="background: var(--btn-success); font-size: 0.75rem; padding: 8px 14px; text-decoration: none; display: inline-block;">
+                    Open Voter Registry Control Page
+                </a>
+            </div>
+        </div>
     </div>
 
 </div>
@@ -593,12 +646,27 @@
         document.documentElement.setAttribute("data-theme", savedTheme);
     })();
 
-    function toggleTheme() { /* Backwards fallback */ toggleSystemTheme(); }
+    function toggleTheme() { toggleSystemTheme(); }
     function toggleSystemTheme() {
         const currentTheme = document.documentElement.getAttribute("data-theme");
         const targetTheme = currentTheme === "dark" ? "light" : "dark";
         document.documentElement.setAttribute("data-theme", targetTheme);
         localStorage.setItem("bcet-theme", targetTheme);
+    }
+
+    // BURGER DROPDOWN CONTROL INTERACTION METHOD
+    function toggleBurgerMenuDropdown() {
+        const dropdown = document.getElementById("burgerMenuDropdownContainer");
+        dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+    }
+
+    window.onclick = function(event) {
+        if (!event.target.matches('.menu-burger') && !event.target.matches('.menu-burger span')) {
+            const dropdowns = document.getElementsByClassName("burger-dropdown-content");
+            for (let i = 0; i < dropdowns.length; i++) {
+                dropdowns[i].style.display = "none";
+            }
+        }
     }
 
     // ACCORDION MENU INTERACTIVE FUNCTION

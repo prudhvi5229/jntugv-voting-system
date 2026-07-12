@@ -6,6 +6,10 @@ import pytz
 from io import BytesIO
 import sqlite3 # Persistent Storage
 import re # Strict Input Sanitation
+import random # For OTP Generation
+import smtplib # For Sending Email OTP
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from werkzeug.security import generate_password_hash, check_password_hash # Secure Hashing
 from flask import Flask, render_template, request, jsonify, make_response, url_for, session, redirect
 
@@ -22,6 +26,16 @@ app.secret_key = "BCET_BLOCKCHAIN_2026_SECURE_ULTRA_PRO_MAX_Z_PLUS_DEEPCORE_IMMU
 IST = pytz.timezone('Asia/Kolkata')
 ADMIN_SECRET = "BCET_ADMIN_PRO" 
 
+# --- PRODUCTION MAIL ENGINE INITIALIZATION ---
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+SENDER_EMAIL = "beharacollegeofengineering@gmail.com"
+SENDER_PASSWORD = "kgocjaossnrptfpp"
+
+# --- VOLATILE OTP MEMORY MATRIX ---
+SIGNUP_OTP_CACHE = {}  
+FORGOT_OTP_CACHE = {}  
+
 # --- ADVANCED SECURITY MEMORY MATRIX ---
 FAILED_ATTEMPTS = {} 
 MAX_FAILED_ATTEMPTS = 5
@@ -30,7 +44,7 @@ RATE_LIMIT_WINDOW = 10
 MAX_REQUESTS_PER_WINDOW = 20 
 SYSTEM_FORENSIC_LOCKOUT = False # Critical Anti-Hacking Killswitch
 
-# --- AUTHORIZED STUDENT LIST ---
+# --- AUTHORIZED STUDENT LIST Matrix ---
 AUTHORIZED_STUDENTS = [
     "24V11A0501", "24V11A0502", "24V11A0503", "24V11A0504", "24V11A0505",
     "24V11A0506", "24V11A0507", "24V11A0510", "24V11A0511", "24V11A0512",
@@ -73,6 +87,25 @@ ELECTION_SETTINGS = {
     "range_end": 580,
     "admin_secret": ADMIN_SECRET
 }
+
+# --- SECURE SMTP ENGINE DISPATCHER ---
+def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = target_email
+        msg['Subject'] = f"🛡️ BCET Secure Gatekeeper - OTP for {purpose}"
+        body = f"Hello Student,\n\nYour 6-Digit One-Time Password (OTP) for BCET Voting System {purpose} is: {otp_code}\n\nThis code is valid for 5 minutes only.\n\nRegards,\nBCET Blockchain Core Engine"
+        msg.attach(MIMEText(body, 'plain'))
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        server.sendmail(SENDER_EMAIL, target_email, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"SMTP Core Operational Error Alert: {e}")
+        return False
 
 # --- LIGHTWEIGHT TRI-NODE MULTI-CONSENSUS BLOCKCHAIN CORE ---
 class CryptographicNode:
@@ -137,8 +170,6 @@ class MultiNodeConsensusEngine:
             return -999
 
         tally_map = {"Node_A": 0, "Node_B": 0, "Node_C": 0}
-        
-        # 1. Dynamic Crypto-Salty Ballot Obfuscation చెక్
         target_ballot_hash = hashlib.sha256(f"{candidate_name}_BCET_BALLOT_SALT".encode()).hexdigest()
 
         for name, node in self.nodes.items():
@@ -148,14 +179,12 @@ class MultiNodeConsensusEngine:
                         if v['ballot_hash'] == target_ballot_hash:
                             tally_map[name] += 1
             else:
-                # 3. Automated Forensic Intrusion Lockout ట్రిగ్గర్ (హాష్ తెగితే)
                 SYSTEM_FORENSIC_LOCKOUT = True
                 return -999
 
         votes_list = list(tally_map.values())
         majority_vote = max(set(votes_list), key=votes_list.count)
         
-        # 51% Attack చెక్ లేదా గ్లోబల్ కౌంట్ మిస్‌మ్యాచ్
         if votes_list.count(majority_vote) < 2 or len(self.nullifiers) != self.global_voter_count:
             SYSTEM_FORENSIC_LOCKOUT = True
             return -999
@@ -176,7 +205,7 @@ def sanitize_input(text):
 @app.before_request
 def intercept_rate_limits():
     global SYSTEM_FORENSIC_LOCKOUT
-    if SYSTEM_FORENSIC_LOCKOUT and not request.path.startswith('/admin-results'):
+    if SYSTEM_FORENSIC_LOCKOUT and not request.path.startswith('/admin-results') and not request.path.startswith('/admin/'):
         return "<h1>503 Service Unavailable: Cryptographic Forensic Lockout Active.</h1>", 503
 
     client_ip = get_client_ip()
@@ -240,7 +269,6 @@ def auth_token_display():
     raw_data = f"{sid}{time.time()}{app.secret_key}"
     blockchain_token = hashlib.sha256(raw_data.encode()).hexdigest().upper()[:12]
     
-    # 2. Zero-Knowledge Multi-Token Binding సిగ్నేచర్ జెనరేషన్
     session['binding_signature'] = hashlib.sha256(f"{sid}{get_client_ip()}{blockchain_token}".encode()).hexdigest()
     session['generated_token'] = blockchain_token
     session['token_verified'] = False 
@@ -264,37 +292,63 @@ def verify_token():
         consensus_blockchain.log_intrusion(session.get('user_id'), "Token Guard Exception Triggered", get_client_ip())
         return render_template('token_verification_input.html', error="Invalid Token!")
 
-# --- AUTHENTICATION ROUTES ---
+# --- AUTHENTICATION & NEW ASYNC OTP CORE MATRIX ---
 
 @app.route('/signup_page')
 def signup_page():
     return render_template('signup.html')
 
-@app.route('/register', methods=['POST'])
-def register():
+@app.route('/send_signup_otp', methods=['POST'])
+def send_signup_otp():
     student_id = sanitize_input(request.form.get('student_id', '')).upper()
     email = sanitize_input(request.form.get('email', '')).lower()
     password = request.form.get('password', '').strip()
 
     if student_id not in AUTHORIZED_STUDENTS:
-        consensus_blockchain.log_intrusion(student_id, "Blacklisted / Non-Authorized Student Signup Registry Attempt", get_client_ip())
-        return jsonify({"status": "error", "message": "ID not authorized by BCET!"})
-    
-    hashed_password = generate_password_hash(password)
+        consensus_blockchain.log_intrusion(student_id, "Non-Authorized Whitelist Sign-up Intrusion Attempt", get_client_ip())
+        return jsonify({"status": "error", "message": "ID not authorized by BCET Whitelist!"})
 
-    try:
-        conn = sqlite3.connect('bcet_production.db')
-        cursor = conn.cursor()
-        cursor.execute("SELECT student_id FROM users WHERE student_id=?", (student_id,))
-        if cursor.fetchone():
-            return jsonify({"status": "error", "message": "Already registered!"})
-
-        cursor.execute("INSERT INTO users VALUES (?, ?, ?)", (student_id, email, hashed_password))
-        conn.commit()
+    conn = sqlite3.connect('bcet_production.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT student_id FROM users WHERE student_id=?", (student_id,))
+    if cursor.fetchone():
         conn.close()
-        return jsonify({"status": "success", "message": "Account created!"})
-    except sqlite3.Error:
-        return jsonify({"status": "error", "message": "Database Lockout."})
+        return jsonify({"status": "error", "message": "ID already registered!"})
+    conn.close()
+
+    otp = str(random.randint(100021, 999989))
+    SIGNUP_OTP_CACHE[student_id] = {
+        "otp": otp, "email": email, "password_hash": generate_password_hash(password),
+        "expires": time.time() + 300
+    }
+
+    if send_secure_otp_email(email, otp, "Account Registration Gate"):
+        return jsonify({"status": "success", "message": "Verification OTP sent to your email!"})
+    return jsonify({"status": "error", "message": "Email Relay Failed. Check App Configurations."})
+
+@app.route('/verify_signup_otp', methods=['POST'])
+def verify_signup_otp():
+    student_id = sanitize_input(request.form.get('student_id', '')).upper()
+    user_otp = sanitize_input(request.form.get('otp', '')).strip()
+
+    cache = SIGNUP_OTP_CACHE.get(student_id)
+    if not cache or time.time() > cache["expires"]:
+        return jsonify({"status": "error", "message": "OTP Expired or Invalid Session Key!"})
+
+    if cache["otp"] == user_otp:
+        try:
+            conn = sqlite3.connect('bcet_production.db')
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO users VALUES (?, ?, ?)", (student_id, cache["email"], cache["password_hash"]))
+            conn.commit()
+            conn.close()
+            SIGNUP_OTP_CACHE.pop(student_id, None)
+            return jsonify({"status": "success", "message": "Account created successfully!"})
+        except sqlite3.Error:
+            return jsonify({"status": "error", "message": "Database Lockout Error."})
+    else:
+        consensus_blockchain.log_intrusion(student_id, "Fraudulent Account Verification OTP Code Defect", get_client_ip())
+        return jsonify({"status": "error", "message": "Incorrect OTP Verification Code!"})
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -327,34 +381,68 @@ def login():
 def forgot_password_page():
     return render_template('forgot_password.html')
 
-@app.route('/reset_password', methods=['POST'])
-def reset_password():
+# --- FORGOT PASS MODULE LAYER WITH DISCRETE OTP CHECKS ---
+@app.route('/send_forgot_otp', methods=['POST'])
+def send_forgot_otp():
     student_id = sanitize_input(request.form.get('student_id', '')).upper()
     email = sanitize_input(request.form.get('email', '')).lower()
-    new_password = request.form.get('password', '').strip()
-    
+
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE student_id=? AND email=?", (student_id, email))
+    cursor.execute("SELECT email FROM users WHERE student_id=?", (student_id,))
     user = cursor.fetchone()
+    conn.close()
 
-    if not user:
-        conn.close()
-        consensus_blockchain.log_intrusion(student_id, "Fraudulent Password Override Attempt", get_client_ip())
-        return jsonify({"status": "error", "message": "Hall Ticket and Email mismatch!"})
+    if not user or user[0] != email:
+        consensus_blockchain.log_intrusion(student_id, "Fraudulent Recovery Sequence Execution Breach", get_client_ip())
+        return jsonify({"status": "error", "message": "Credentials mismatch mapping!"})
 
-    hashed_password = generate_password_hash(new_password)
-    cursor.execute("UPDATE users SET password_hash=? WHERE student_id=?", (hashed_password, student_id))
+    otp = str(random.randint(100021, 999989))
+    FORGOT_OTP_CACHE[student_id] = {"otp": otp, "expires": time.time() + 300, "verified": False}
+
+    if send_secure_otp_email(email, otp, "Password Reset Protocol"):
+        return jsonify({"status": "success", "message": "Security recovery token pushed to email address!"})
+    return jsonify({"status": "error", "message": "Email Dispatched Relay Mechanism Failed."})
+
+@app.route('/verify_forgot_code', methods=['POST'])
+def verify_forgot_code():
+    student_id = sanitize_input(request.form.get('student_id', '')).upper()
+    user_otp = sanitize_input(request.form.get('otp', '')).strip()
+
+    cache = FORGOT_OTP_CACHE.get(student_id)
+    if not cache or time.time() > cache["expires"]:
+        return jsonify({"status": "error", "message": "Token window session expired!"})
+
+    if cache["otp"] == user_otp:
+        FORGOT_OTP_CACHE[student_id]["verified"] = True
+        return jsonify({"status": "success", "message": "Security shield cleared! You can now update password configurations."})
+    return jsonify({"status": "error", "message": "Invalid security authentication code sequence."})
+
+@app.route('/commit_new_password', methods=['POST'])
+def commit_new_password():
+    student_id = sanitize_input(request.form.get('student_id', '')).upper()
+    new_password = request.form.get('password', '').strip()
+
+    cache = FORGOT_OTP_CACHE.get(student_id)
+    if not cache or not cache.get("verified"):
+        return jsonify({"status": "error", "message": "State access architecture violation blocked!"})
+
+    hashed = generate_password_hash(new_password)
+    conn = sqlite3.connect('bcet_production.db')
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET password_hash=? WHERE student_id=?", (hashed, student_id))
     conn.commit()
     conn.close()
-    return jsonify({"status": "success", "message": "Password Reset Successful!"})
+
+    FORGOT_OTP_CACHE.pop(student_id, None)
+    return jsonify({"status": "success", "message": "Secret password allocation overridden successfully!"})
 
 @app.route('/logout')
 def logout():
     session.clear() 
     return redirect(url_for('welcome'))
 
-# --- VOTING & AUDIT ---
+# --- VOTING & AUDIT CORE ENGINE ---
 
 @app.route('/cast_vote', methods=['POST'])
 def cast_vote():
@@ -368,7 +456,6 @@ def cast_vote():
     candidate = sanitize_input(request.form.get('candidate'))
     user_ip = get_client_ip()
 
-    # 2. Zero-Knowledge Multi-Token Binding వెరిఫికేషన్ లేయర్
     expected_sig = hashlib.sha256(f"{student_id}{user_ip}{session.get('generated_token')}".encode()).hexdigest()
     if session.get('binding_signature') != expected_sig:
         consensus_blockchain.log_intrusion(student_id, "Cryptographic Packet Signature Mismatch! Tampering Blocked.", user_ip)
@@ -382,13 +469,10 @@ def cast_vote():
         return render_template('already_cast.html')
 
     time.sleep(1.5)
-
     consensus_blockchain.nullifiers.add(nullifier)
     receipt_id = hashlib.sha256(str(time.time()).encode()).hexdigest().upper()[:12]
     
-    # 1. Dynamic Crypto-Salty Ballot Obfuscation హ్యాండ్లింగ్
     secured_ballot_hash = hashlib.sha256(f"{candidate}_BCET_BALLOT_SALT".encode()).hexdigest()
-
     vote_packet = {'ballot_hash': secured_ballot_hash, 'receipt': receipt_id}
     consensus_blockchain.broadcast_transaction(vote_packet)
     
@@ -419,7 +503,7 @@ def audit_portal():
             if result: break
     return render_template('audit.html', searched_id=searched_id, result=result)
 
-# --- ADMIN ROUTES ---
+# --- ADVANCED DYNAMIC PANELS & CONTROL ASSIGNMENTS ---
 
 @app.route(f'/admin-results/{ADMIN_SECRET}')
 def admin_results():
@@ -440,6 +524,49 @@ def admin_results():
                             settings=ELECTION_SETTINGS, 
                             vote_counts=vote_counts, 
                             logs=consensus_blockchain.security_logs)
+
+# 1. New Standalone Whitelist Voter Registry Page Route
+@app.route(f'/admin/voter-registry/{ADMIN_SECRET}')
+def dynamic_voter_registry_view():
+    return render_template('voter_registry.html', students=AUTHORIZED_STUDENTS, secret=ADMIN_SECRET)
+
+@app.route('/admin/add_student_live', methods=['POST'])
+def add_student_live():
+    new_id = sanitize_input(request.form.get('student_id', '')).upper()
+    if new_id and new_id not in AUTHORIZED_STUDENTS:
+        AUTHORIZED_STUDENTS.append(new_id)
+        return jsonify({"status": "success", "message": f"Student Node [{new_id}] injected into authorization Whitelist!"})
+    return jsonify({"status": "error", "message": "ID already exists or structural parameter invalid!"})
+
+@app.route('/admin/delete_student_live', methods=['POST'])
+def delete_student_live():
+    target_id = sanitize_input(request.form.get('student_id', '')).upper()
+    if target_id in AUTHORIZED_STUDENTS:
+        AUTHORIZED_STUDENTS.remove(target_id)
+        return jsonify({"status": "success", "message": f"Voter Node [{target_id}] removed from Whitelist configurations."})
+    return jsonify({"status": "error", "message": "Target identification parameter mapping resolution error."})
+
+# 2. New Standalone Factory Profile Reset Page Route
+@app.route(f'/admin/factory-reset/{ADMIN_SECRET}')
+def dynamic_factory_reset_view():
+    return render_template('factory_reset.html', secret=ADMIN_SECRET)
+
+@app.route('/admin/execute_node_flush', methods=['POST'])
+def execute_node_flush():
+    target_id = sanitize_input(request.form.get('student_id', '')).upper()
+    if not target_id:
+        return jsonify({"status": "error", "message": "Empty reference framework parameters tracker."})
+    conn = sqlite3.connect('bcet_production.db')
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM users WHERE student_id=?", (target_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success", "message": f"Database settings scrubbed for Student [{target_id}]. Safe for new sign-up execution."})
+
+# 3. New Dedicated Standalone Security Audit Documentation Page Route
+@app.route(f'/admin/security-audit/{ADMIN_SECRET}')
+def dynamic_security_audit_view():
+    return render_template('security_audit.html', secret=ADMIN_SECRET)
 
 @app.route('/sync_candidates', methods=['POST'])
 def sync_candidates():
@@ -473,6 +600,44 @@ def reset_election():
     SYSTEM_FORENSIC_LOCKOUT = False
     consensus_blockchain.reset_engine()
     return jsonify({"status": "success"})
+
+# --- ORIGINAL REPORT EXPORT UTILITY PRESERVED AT 100% ---
+@app.route('/download-results/<secret>')
+def download_results(secret):
+    if secret != ADMIN_SECRET:
+        return "Unauthorized Request Execution Aborted.", 403
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+    p.setFillColor(colors.HexColor("#0f172a"))
+    p.setFont("Helvetica-Bold", 20)
+    p.drawString(50, 750, "BCET ELECTION MANAGEMENT SYSTEMS NODE")
+    p.setFont("Helvetica", 10)
+    p.setFillColor(colors.HexColor("#64748b"))
+    p.drawString(50, 735, f"Report Compilation Ledger Timestamp: {datetime.now(IST).strftime('%Y-%m-%d %H:%M:%S')} IST")
+    p.setStrokeColor(colors.HexColor("#cbd5e1"))
+    p.line(50, 720, 550, 720)
+    p.setFont("Helvetica-Bold", 14)
+    p.setFillColor(colors.HexColor("#1e293b"))
+    p.drawString(50, 680, "Consensus Verification Tally Summary Matrix:")
+    y = 650
+    for c in ELECTION_SETTINGS["candidates"]:
+        tally = consensus_blockchain.verify_consensus_and_tally(c['name'])
+        display_tally = "CRYPTOGRAPHIC LOCKOUT" if tally == -999 else str(tally)
+        p.setFont("Helvetica", 12)
+        p.drawString(60, y, f"Candidate Handle: {c['name']}")
+        p.drawString(350, y, f"Verified Ballot Units: {display_tally}")
+        y -= 25
+    p.line(50, y, 550, y)
+    y -= 30
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(50, y, f"Total System Ballot Mappings Log Count Check: {len(consensus_blockchain.nullifiers)}")
+    p.showPage()
+    p.save()
+    buffer.seek(0)
+    response = make_response(buffer.getvalue())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=BCET_Node_Report_{datetime.now(IST).strftime("%Y%m%d")}.pdf'
+    return response
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)

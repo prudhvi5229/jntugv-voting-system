@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Dynamic Voter Whitelist Registry</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f8fafc; padding: 40px 20px; }
+        .box { max-width: 600px; margin: 0 auto; background: #1e293b; padding: 30px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); }
+        h2 { margin-top: 0; color: #10b981; font-weight: 800; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { flex-grow: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; font-weight: 600; text-transform: uppercase; }
+        button { padding: 12px 20px; border: none; border-radius: 8px; background: #10b981; color: white; font-weight: 700; cursor: pointer; }
+        .student-list { max-height: 350px; overflow-y: auto; background: #0f172a; border-radius: 10px; padding: 10px; }
+        .student-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .del-btn { background: #ef4444; padding: 6px 12px; font-size: 0.8rem; }
+        .back-link { display: inline-block; margin-top: 20px; color: #94a3b8; text-decoration: none; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h2>Voter Whitelist Registry Control</h2>
+    <p style="color: #94a3b8; font-size: 0.85rem; margin-top: -8px; margin-bottom: 20px;">Inject or strip authorized node ID parameters in volatile server memory allocation arrays.</p>
+    
+    <div class="input-group">
+        <input type="text" id="sidInput" placeholder="Enter Student ID Matrix (e.g. 24V11A0599)">
+        <button onclick="addStudentLive()">Authorize ID</button>
+    </div>
+
+    <div class="student-list">
+        {% for student in students %}
+        <div class="student-item">
+            <span>Identification Handle: <b>{{ student }}</b></span>
+            <button class="del-btn" onclick="deleteStudentLive('{{ student }}')">Remove Authorization</button>
+        </div>
+        {% endfor %}
+    </div>
+
+    <a href="/admin-results/{{ secret }}" class="back-link">← Return to Control Dashboard Node</a>
+</div>
+
+<script>
+function addStudentLive() {
+    const val = document.getElementById('sidInput').value.trim();
+    if(!val) return;
+    let fd = new FormData();
+    fd.append('student_id', val);
+    fetch('/admin/add_student_live', { method: 'POST', body: fd })
+    .then(r => r.json()).then(d => { alert(d.message); window.location.reload(); });
+}
+
+function deleteStudentLive(sid) {
+    if(!confirm("Revoke operational clear parameters for " + sid + "?")) return;
+    let fd = new FormData();
+    fd.append('student_id', sid);
+    fetch('/admin/delete_student_live', { method: 'POST', body: fd })
+    .then(r => r.json()).then(d => { alert(d.message); window.location.reload(); });
+}
+</script>
+</body>
+</html>
