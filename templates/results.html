@@ -348,7 +348,7 @@
                 <input type="text" class="input-field candidate-name" value="${candidate.name}" placeholder="Name" style="width: 100px;">
                 <input type="text" class="input-field candidate-symbol" value="${candidate.symbol}" placeholder="Symbol" style="width: 50px; text-align: center;">
                 
-                <!-- STABLE BASE64 IMAGE UPLOADER INTERFACE -->
+                <!-- STABLE LOCAL BROWSER IN-MEMORY BASE64 STREAM -->
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <input type="file" accept="image/*" style="display: none;" id="file-input-${index}" onchange="processManifestoMediaUpload(this, ${index})">
                     <button type="button" class="upload-btn" onclick="document.getElementById('file-input-${index}').click()">
@@ -356,7 +356,7 @@
                     </button>
                     <input type="hidden" class="candidate-manifesto-url" id="manifesto-url-${index}" value="${candidate.manifesto || ''}">
                     <span id="upload-status-${index}" style="font-size: 0.8rem; font-weight: 700; min-width: 45px;">
-                        ${candidate.manifesto ? `<a href="${candidate.manifesto}" target="_blank" style="color: #22c55e; text-decoration: none;">✅ View</a>` : `<span style="color: #64748b;">No File</span>`}
+                        ${candidate.manifesto ? `<span style="color: #22c55e;">✅ Loaded</span>` : `<span style="color: #64748b;">No File</span>`}
                     </span>
                 </div>
 
@@ -374,40 +374,31 @@
         });
     }
 
-    // 100% గ్యారంటీగా ఎలాంటి రిస్ట్రిక్షన్స్ లేని ఓపెన్ క్లౌడ్ గేట్‌వే
+    // 100% ఎర్రర్-ఫ్రీ లోకల్ బ్రౌజర్ Base64 కన్వర్టర్ (ఏ ఆన్‌లైన్ క్లౌడ్ గేట్‌వేస్ అవసరం లేదు)
     function processManifestoMediaUpload(input, index) {
         const file = input.files[0];
         if (!file) return;
 
         const uploadIndicator = document.getElementById(`upload-status-${index}`);
         if (uploadIndicator) {
-            uploadIndicator.innerHTML = "<span style='color: #3b82f6;'>⏳ uploading...</span>";
+            uploadIndicator.innerHTML = "<span style='color: #3b82f6;'>⏳ loading...</span>";
         }
 
-        const packet = new FormData();
-        packet.append("file", file);
-
-        fetch("https://telegra.ph/upload", {
-            method: "POST",
-            body: packet
-        })
-        .then(res => res.json())
-        .then(payload => {
-            if (payload && payload[0] && payload[0].src) {
-                // టెలిగ్రాఫ్ ఓపెన్ సర్వర్ CDN లింక్ జనరేట్ అవుతుంది
-                const CDN_Link = "https://telegra.ph" + payload[0].src;
-                document.getElementById(`manifesto-url-${index}`).value = CDN_Link;
-                if (uploadIndicator) {
-                    uploadIndicator.innerHTML = `<a href="${CDN_Link}" target="_blank" style="color: #22c55e; text-decoration: none; font-weight: 800;">✅ View</a>`;
-                }
-            } else {
-                throw new Error();
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function () {
+            // ఇమేజ్ డేటాని డైరెక్ట్ గా ఒక లాంగ్ టెక్స్ట్ స్ట్రింగ్ లాగా మార్చి హిడెన్ ఇన్‌పుట్ లో భద్రపరుస్తుంది
+            const base64Data = reader.result;
+            document.getElementById(`manifesto-url-${index}`).value = base64Data;
+            
+            if (uploadIndicator) {
+                uploadIndicator.innerHTML = "<span style='color: #22c55e;'>✅ Loaded</span>";
             }
-        })
-        .catch(() => {
+        };
+        reader.onerror = function() {
             if (uploadIndicator) uploadIndicator.innerHTML = "<span style='color: #ef4444;'>❌ Failed</span>";
-            alert("Upload failed. Verify image format or size.");
-        });
+            alert("Local conversion failed.");
+        };
     }
 
     function addNewCandidateRow() {
