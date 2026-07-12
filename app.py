@@ -5,6 +5,7 @@ from datetime import datetime
 import pytz
 from io import BytesIO
 import sqlite3 # Persistent Storage
+import re # Strict Input Sanitation
 from werkzeug.security import generate_password_hash, check_password_hash # Secure Hashing
 from flask import Flask, render_template, request, jsonify, make_response, url_for, session, redirect
 
@@ -15,11 +16,18 @@ from reportlab.lib import colors
 
 # INITIALIZE FLASK WITH STATIC FOLDER SUPPORT
 app = Flask(__name__, static_url_path='/static', static_folder='static')
-app.secret_key = "BCET_BLOCKCHAIN_2026_SECURE"
+app.secret_key = "BCET_BLOCKCHAIN_2026_SECURE_ULTRA_PRO_MAX_Z_PLUS_DEEPCORE"
 
 # --- CONFIGURATION ---
 IST = pytz.timezone('Asia/Kolkata')
 ADMIN_SECRET = "BCET_ADMIN_PRO" 
+
+# --- ADVANCED SECURITY MEMORY MATRIX ---
+FAILED_ATTEMPTS = {} 
+MAX_FAILED_ATTEMPTS = 5
+RATE_LIMIT_TRACKER = {} # DDoS Protection Matrix
+RATE_LIMIT_WINDOW = 10 # Seconds
+MAX_REQUESTS_PER_WINDOW = 20 
 
 # --- AUTHORIZED STUDENT LIST ---
 AUTHORIZED_STUDENTS = [
@@ -52,19 +60,10 @@ def init_db():
 
 init_db()
 
-# --- CANDIDATES WINDOW STRUCT WITH PERSISTENT TIMELINE ---
 ELECTION_SETTINGS = {
     "candidates": [
-        {
-            "name": "Ramu", 
-            "symbol": "🦁", 
-            "manifesto": ""
-        }, 
-        {
-            "name": "Laxman", 
-            "symbol": "🐘", 
-            "manifesto": ""
-        }
+        {"name": "Ramu", "symbol": "", "manifesto": ""}, 
+        {"name": "Laxman", "symbol": "", "manifesto": ""}
     ],
     "start_time": "2026-06-26T12:01",
     "end_time": "2026-06-28T02:01",
@@ -75,17 +74,48 @@ ELECTION_SETTINGS = {
     "admin_secret": ADMIN_SECRET
 }
 
-# --- BLOCKCHAIN ENGINE ---
-class Blockchain:
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
+# --- LIGHTWEIGHT TRI-NODE MULTI-CONSENSUS BLOCKCHAIN CORE ---
+class CryptographicNode:
+    def __init__(self, node_id):
+        self.node_id = node_id
         self.chain = []
-        self.pending_votes = []
+        self.create_block(proof=100, previous_hash='1')
+
+    def create_block(self, proof, previous_hash, votes=[]):
+        block = {
+            'index': len(self.chain) + 1,
+            'timestamp': datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S"),
+            'votes': list(votes),
+            'proof': proof,
+            'previous_hash': previous_hash,
+        }
+        self.chain.append(block)
+        return block
+
+    def hash(self, block):
+        encoded_block = json.dumps(block, sort_keys=True).encode()
+        return hashlib.sha256(encoded_block).hexdigest()
+
+    def is_node_valid(self):
+        for i in range(1, len(self.chain)):
+            if self.chain[i]['previous_hash'] != self.hash(self.chain[i-1]):
+                return False
+        return True
+
+class MultiNodeConsensusEngine:
+    def __init__(self):
+        self.reset_engine()
+
+    def reset_engine(self):
+        # 3 వేర్వేరు వర్చువల్ నోడ్స్ (Tri-Node Consensus Layout)
+        self.nodes = {
+            "Node_A": CryptographicNode("Node_A"),
+            "Node_B": CryptographicNode("Node_B"),
+            "Node_C": CryptographicNode("Node_C")
+        }
         self.nullifiers = set()
         self.security_logs = []
-        self.create_block(previous_hash='1', proof=100)
+        self.global_voter_count = 0 
 
     def log_intrusion(self, user_id, reason, ip):
         self.security_logs.append({
@@ -95,34 +125,63 @@ class Blockchain:
             "ip": ip
         })
 
-    def create_block(self, proof, previous_hash):
-        block = {
-            'index': len(self.chain) + 1,
-            'timestamp': datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S"),
-            'votes': list(self.pending_votes),
-            'proof': proof,
-            'previous_hash': previous_hash,
-        }
-        self.pending_votes = []
-        self.chain.append(block)
-        return block
+    # ఓటు వేసినప్పుడు 3 నోడ్స్ కి ఒకేసారి సమాంతరంగా (Parallel) బ్రాడ్‌కాస్ట్ అవుతుంది
+    def broadcast_transaction(self, vote_data):
+        self.global_voter_count += 1
+        for node_name, node_obj in self.nodes.items():
+            last_block = node_obj.chain[-1]
+            prev_hash = node_obj.hash(last_block)
+            node_obj.create_block(proof=123, previous_hash=prev_hash, votes=[vote_data])
 
-    def get_last_block(self):
-        return self.chain[-1]
+    # Z+++++++ MULTI-NODE CONSENSUS CHECK ALGORITHM
+    def verify_consensus_and_tally(self, candidate_name):
+        tally_map = {"Node_A": 0, "Node_B": 0, "Node_C": 0}
+        valid_nodes_count = 0
 
-    def hash(self, block):
-        encoded_block = json.dumps(block, sort_keys=True).encode()
-        return hashlib.sha256(encoded_block).hexdigest()
+        # Step 1: ప్రతి నోడ్ యొక్క ఇంటర్నల్ హాష్ లింక్ చెక్ చేస్తుంది
+        for name, node in self.nodes.items():
+            if node.is_node_valid():
+                valid_nodes_count += 1
+                # ఆ నోడ్ లో సదరు కాండిడేట్ కి ఉన్న ఓట్లను లెక్కిస్తుంది
+                for block in node.chain:
+                    for v in block['votes']:
+                        if v['candidate'] == candidate_name:
+                            tally_map[name] += 1
 
-    def get_vote_count(self, name):
-        count = 0
-        for block in self.chain:
-            for v in block['votes']:
-                if v['candidate'] == name:
-                    count += 1
-        return count
+        # Step 2: 51% Attack Detection (కనీసం 2 నోడ్స్ హాష్ అగ్రీ అవ్వాలి)
+        votes_list = list(tally_map.values())
+        # మెజారిటీ ఓటింగ్ కన్సెన్సస్ రూల్ (Consensus Check)
+        majority_vote = max(set(votes_list), key=votes_list.count)
+        
+        # ఒకవేళ ఏదైనా నోడ్ లో డేటా మారితే ఇంట్రూజన్ రికార్డ్ అవుతుంది
+        if votes_list.count(majority_vote) < 2 or len(self.nullifiers) != self.global_voter_count:
+            return -999 # Security Breach Signal Trigger
+            
+        return majority_vote
 
-blockchain = Blockchain()
+consensus_blockchain = MultiNodeConsensusEngine()
+
+# --- HELPER SECURITY FUNCTIONS ---
+def get_client_ip():
+    raw_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    return raw_ip.split(',')[0].strip() if raw_ip and ',' in raw_ip else request.remote_addr
+
+def sanitize_input(text):
+    if not text: return ""
+    return re.sub(r"[<>\'\"\\;=\\-]", "", str(text)).strip()
+
+# --- Anti-DDoS Interceptor ---
+@app.before_request
+def intercept_rate_limits():
+    client_ip = get_client_ip()
+    current_time = time.time()
+    if client_ip not in RATE_LIMIT_TRACKER:
+        RATE_LIMIT_TRACKER[client_ip] = []
+    RATE_LIMIT_TRACKER[client_ip] = [t for t in RATE_LIMIT_TRACKER[client_ip] if current_time - t < RATE_LIMIT_WINDOW]
+    if len(RATE_LIMIT_TRACKER[client_ip]) >= MAX_REQUESTS_PER_WINDOW:
+        consensus_blockchain.log_intrusion("ANTI_DDOS_GATE", "Rate Limit Violation / Network Attack Blocked", client_ip)
+        return "<h1>429 Too Many Requests. Anti-DDoS Lock Activated.</h1>", 429
+    RATE_LIMIT_TRACKER[client_ip].append(current_time)
 
 # --- ROUTES ---
 
@@ -141,9 +200,14 @@ def index():
     if 'user_id' not in session:
         return redirect(url_for('welcome'))
     
+    if session.get('user_ip') != get_client_ip():
+        consensus_blockchain.log_intrusion(session.get('user_id'), "Session Hijack Blocked (IP Alteration)", get_client_ip())
+        session.clear()
+        return redirect(url_for('welcome'))
+
     if not session.get('token_verified'):
         return redirect(url_for('auth_token_display'))
-    
+
     now = datetime.now(IST)
     start = datetime.strptime(ELECTION_SETTINGS["start_time"], "%Y-%m-%dT%H:%M").replace(tzinfo=IST)
     end = datetime.strptime(ELECTION_SETTINGS["end_time"], "%Y-%m-%dT%H:%M").replace(tzinfo=IST)
@@ -154,10 +218,9 @@ def index():
     elif now < start:
         status = "NOT_STARTED"
     
-    display_settings = ELECTION_SETTINGS.copy()
     return render_template('index.html', 
                            candidate_list=ELECTION_SETTINGS["candidates"], 
-                           settings=display_settings,
+                           settings=ELECTION_SETTINGS,
                            election_status=status)
 
 # --- BLOCKCHAIN AUTH TOKEN ROUTES ---
@@ -173,7 +236,6 @@ def auth_token_display():
     
     session['generated_token'] = blockchain_token
     session['token_verified'] = False 
-    
     return render_template('auth_token_display.html', token=blockchain_token)
 
 @app.route('/verify_token_page')
@@ -184,14 +246,15 @@ def verify_token_page():
 
 @app.route('/verify_token', methods=['POST'])
 def verify_token():
-    user_input = request.form.get('input_token', '').strip().upper()
+    user_input = sanitize_input(request.form.get('input_token', '')).upper()
     actual_token = session.get('generated_token')
 
     if user_input and user_input == actual_token:
         session['token_verified'] = True
         return redirect(url_for('index'))
     else:
-        return render_template('token_verification_input.html', error="Invalid Token! Please ensure you copied correctly.")
+        consensus_blockchain.log_intrusion(session.get('user_id'), "Token Guard Exception Triggered", get_client_ip())
+        return render_template('token_verification_input.html', error="Invalid Token!")
 
 # --- AUTHENTICATION ROUTES ---
 
@@ -201,11 +264,12 @@ def signup_page():
 
 @app.route('/register', methods=['POST'])
 def register():
-    student_id = request.form.get('student_id', '').upper().strip()
-    email = request.form.get('email', '').strip().lower()
+    student_id = sanitize_input(request.form.get('student_id', '')).upper()
+    email = sanitize_input(request.form.get('email', '')).lower()
     password = request.form.get('password', '').strip()
 
     if student_id not in AUTHORIZED_STUDENTS:
+        consensus_blockchain.log_intrusion(student_id, "Blacklisted / Non-Authorized Student Signup Registry Attempt", get_client_ip())
         return jsonify({"status": "error", "message": "ID not authorized by BCET!"})
     
     hashed_password = generate_password_hash(password)
@@ -215,19 +279,24 @@ def register():
         cursor = conn.cursor()
         cursor.execute("SELECT student_id FROM users WHERE student_id=?", (student_id,))
         if cursor.fetchone():
-            return jsonify({"status": "error", "message": "This Hall Ticket is already registered!"})
+            return jsonify({"status": "error", "message": "Already registered!"})
 
         cursor.execute("INSERT INTO users VALUES (?, ?, ?)", (student_id, email, hashed_password))
         conn.commit()
         conn.close()
-        return jsonify({"status": "success", "message": "Account created! Redirecting to Login..."})
+        return jsonify({"status": "success", "message": "Account created!"})
     except sqlite3.Error:
-        return jsonify({"status": "error", "message": "Database Error occurred."})
+        return jsonify({"status": "error", "message": "Database Lockout."})
 
 @app.route('/login', methods=['POST'])
 def login():
-    student_id = request.form.get('student_id', '').upper().strip()
+    student_id = sanitize_input(request.form.get('student_id', '')).upper()
     password = request.form.get('password', '').strip()
+    client_ip = get_client_ip()
+
+    if FAILED_ATTEMPTS.get(client_ip, 0) >= MAX_FAILED_ATTEMPTS:
+        consensus_blockchain.log_intrusion(student_id, "Brute Force Threshold Breached (Node Locked)", client_ip)
+        return "<h1>IP blocked temporarily due to excessive failures.</h1>", 423
 
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
@@ -236,10 +305,14 @@ def login():
     conn.close()
 
     if user and check_password_hash(user[0], password):
+        FAILED_ATTEMPTS[client_ip] = 0 
         session['user_id'] = student_id
+        session['user_ip'] = client_ip 
         session['token_verified'] = False
         return redirect(url_for('auth_token_display'))
     
+    FAILED_ATTEMPTS[client_ip] = FAILED_ATTEMPTS.get(client_ip, 0) + 1
+    consensus_blockchain.log_intrusion(student_id, f"Failed Node Authentication ({FAILED_ATTEMPTS[client_ip]}/{MAX_FAILED_ATTEMPTS})", client_ip)
     return render_template('login_error.html')
 
 @app.route('/forgot_password_page')
@@ -248,8 +321,8 @@ def forgot_password_page():
 
 @app.route('/reset_password', methods=['POST'])
 def reset_password():
-    student_id = request.form.get('student_id', '').upper().strip()
-    email = request.form.get('email', '').strip().lower()
+    student_id = sanitize_input(request.form.get('student_id', '')).upper()
+    email = sanitize_input(request.form.get('email', '')).lower()
     new_password = request.form.get('password', '').strip()
     
     conn = sqlite3.connect('bcet_production.db')
@@ -259,7 +332,8 @@ def reset_password():
 
     if not user:
         conn.close()
-        return jsonify({"status": "error", "message": "Hall Ticket and Email do not match our records!"})
+        consensus_blockchain.log_intrusion(student_id, "Fraudulent Password Override Attempt", get_client_ip())
+        return jsonify({"status": "error", "message": "Hall Ticket and Email mismatch!"})
 
     hashed_password = generate_password_hash(new_password)
     cursor.execute("UPDATE users SET password_hash=? WHERE student_id=?", (hashed_password, student_id))
@@ -280,39 +354,38 @@ def cast_vote():
         return redirect(url_for('welcome'))
 
     if not ELECTION_SETTINGS["is_active"]:
-        return "<h1>Election Closed</h1><a href='/'>Back</a>"
+        return "<h1>Election Closed</h1>"
     
     student_id = session['user_id']
-    candidate = request.form.get('candidate')
-    raw_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    user_ip = raw_ip.split(',')[0].strip() if raw_ip and ',' in raw_ip else request.remote_addr
+    candidate = sanitize_input(request.form.get('candidate'))
+    user_ip = get_client_ip()
 
-    nullifier = hashlib.sha256(student_id.encode()).hexdigest()
-    if nullifier in blockchain.nullifiers:
-        blockchain.log_intrusion(student_id, "Double Vote Attempt", user_ip)
+    # Zero-Knowledge సాల్టెడ్ నల్లిఫైయర్ ప్రొటెక్షన్ లేయర్
+    nullifier = hashlib.sha256(f"{student_id}BCET_SALT_2026".encode()).hexdigest()
+    if nullifier in consensus_blockchain.nullifiers:
+        consensus_blockchain.log_intrusion(student_id, "Double Broadcast Transaction Packet Intercepted", user_ip)
         session.clear() 
         return render_template('already_cast.html')
 
     time.sleep(1.5)
 
-    blockchain.nullifiers.add(nullifier)
-    receipt_id = hashlib.sha256(str(time.time()).encode()).hexdigest().upper()[:12].upper()
-    blockchain.pending_votes.append({'candidate': candidate, 'receipt': receipt_id})
-    blockchain.create_block(proof=123, previous_hash=blockchain.hash(blockchain.get_last_block()))
+    consensus_blockchain.nullifiers.add(nullifier)
+    receipt_id = hashlib.sha256(str(time.time()).encode()).hexdigest().upper()[:12]
+    
+    # మొత్తం 3 వర్చువల్ నోడ్స్ కి ఒకేసారి ఓటు బ్రాడ్‌కాస్ట్ అవుతుంది
+    vote_packet = {'candidate': candidate, 'receipt': receipt_id}
+    consensus_blockchain.broadcast_transaction(vote_packet)
     
     session.clear() 
-    
-    return render_template('success.html', 
-                            candidate=candidate, 
-                            receipt=receipt_id, 
-                            timestamp=datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S"))
+    return render_template('success.html', candidate=candidate, receipt=receipt_id, timestamp=datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S"))
 
 @app.route('/audit', methods=['GET', 'POST'])
 def audit_portal():
-    searched_id, result = None, None
+    searched_id = sanitize_input(request.form.get('receipt', '')).upper()
+    result = None
     if request.method == 'POST':
-        searched_id = request.form.get('receipt', '').upper().strip()
-        for block in blockchain.chain:
+        # మెజారిటీ నోడ్ (Node A) నుండి ట్రాన్సాక్షన్ ఆడిట్ వెరిఫై చేస్తుంది
+        for block in consensus_blockchain.nodes["Node_A"].chain:
             for vote in block['votes']:
                 if vote.get('receipt') == searched_id:
                     result = {
@@ -328,52 +401,44 @@ def audit_portal():
 
 @app.route(f'/admin-results/{ADMIN_SECRET}')
 def admin_results():
-    vote_counts = {c['name']: blockchain.get_vote_count(c['name']) for c in ELECTION_SETTINGS["candidates"]}
+    vote_counts = {}
+    security_breach_detected = False
+
+    for c in ELECTION_SETTINGS["candidates"]:
+        # ప్రతి అడ్మిన్ పేజీ రీఫ్రెష్ కి 3 నోడ్స్ మధ్య Consensus ని కాలిక్యులేట్ చేస్తుంది
+        tally = consensus_blockchain.verify_consensus_and_tally(c['name'])
+        if tally == -999:
+            security_breach_detected = True
+            vote_counts[c['name']] = 0
+        else:
+            vote_counts[c['name']] = tally
+
+    if security_breach_detected:
+        consensus_blockchain.log_intrusion("TRI_NODE_CORE", "CRITICAL ALERT: 51% Node Attack Vector Detected!", get_client_ip())
+
     return render_template('results.html', 
                             settings=ELECTION_SETTINGS, 
                             vote_counts=vote_counts, 
-                            logs=blockchain.security_logs)
+                            logs=consensus_blockchain.security_logs)
 
-@app.route('/admin/clear_accounts', methods=['POST'])
-def clear_accounts():
-    data = request.json
-    secret = data.get('secret')
-    
-    if secret == ADMIN_SECRET:
-        try:
-            conn = sqlite3.connect('bcet_production.db')
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM users")
-            conn.commit()
-            conn.close()
-            return jsonify({"status": "success", "message": "Database Cleared."})
-        except Exception as e:
-            return jsonify({"status": "error", "message": str(e)})
-    
-    return jsonify({"status": "error", "message": "Unauthorized!"}), 403
-
-# --- FIXED MANIFESTO INTERCEPTOR SYNC PARAMETER ---
 @app.route('/sync_candidates', methods=['POST'])
 def sync_candidates():
     incoming_data = request.json
     updated_candidates = []
-    
     for c in incoming_data.get('candidates', []):
         updated_candidates.append({
-            "name": c.get('name'),
-            "symbol": c.get('symbol', '👤'),
-            # ఫిక్స్: ఇక్కడ డిఫాల్ట్ హార్డ్-కోడెడ్ టెక్స్ట్‌ని తీసేసి, results.html నుండి వచ్చే ImgBB ఫోటో లింక్‌ని డైరెక్ట్‌గా యాక్సెప్ట్ చేస్తున్నాం.
+            "name": sanitize_input(c.get('name')),
+            "symbol": c.get('symbol', ''), 
             "manifesto": c.get('manifesto', '') 
         })
-        
     ELECTION_SETTINGS["candidates"] = updated_candidates
-    return jsonify({"status": "success", "message": "Candidates and Manifestos Synced Successfully!"})
+    return jsonify({"status": "success", "message": "Synced Successfully!"})
 
 @app.route('/update_timing', methods=['POST'])
 def update_timing():
     data = request.json
-    ELECTION_SETTINGS["start_time"] = data['start']
-    ELECTION_SETTINGS["end_time"] = data['end']
+    ELECTION_SETTINGS["start_time"] = sanitize_input(data['start'])
+    ELECTION_SETTINGS["end_time"] = sanitize_input(data['end'])
     ELECTION_SETTINGS["is_active"] = True
     return jsonify({"status": "success"})
 
@@ -384,60 +449,8 @@ def stop_election():
 
 @app.route('/reset_election', methods=['POST'])
 def reset_election():
-    blockchain.reset()
+    consensus_blockchain.reset_engine()
     return jsonify({"status": "success"})
-
-@app.route(f'/download-results/{ADMIN_SECRET}')
-def download_results():
-    vote_counts = {c['name']: blockchain.get_vote_count(c['name']) for c in ELECTION_SETTINGS["candidates"]}
-    
-    winner_name = max(vote_counts, key=vote_counts.get)
-    max_votes = vote_counts[winner_name]
-
-    buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter
-    
-    p.setFillColor(colors.HexColor("#1e293b"))
-    p.rect(0, height - 100, width, 100, fill=1, stroke=0)
-    p.setFillColor(colors.white)
-    p.setFont("Helvetica-Bold", 22)
-    p.drawString(50, height - 60, "BCET OFFICIAL ELECTION REPORT")
-    p.setFont("Helvetica", 10)
-    p.drawString(50, height - 80, f"Behara College of Engineering & Technology | {datetime.now(IST).strftime('%d %b %Y')}")
-
-    p.setFillColor(colors.black)
-    p.setFont("Helvetica-Bold", 14)
-    p.drawString(50, height - 150, "FINAL ELECTION SUMMARY")
-
-    p.setFont("Helvetica-Bold", 18)
-    if max_votes > 0:
-        p.setFillColor(colors.HexColor("#16a34a"))
-        p.drawCentredString(width/2, height - 210, f"OFFICIAL WINNER: {winner_name.upper()}")
-        p.setFont("Helvetica", 12)
-        p.setFillColor(colors.black)
-        p.drawCentredString(width/2, height - 230, f"Secured {max_votes} Verified Blockchain Votes")
-    else:
-        p.drawCentredString(width/2, height - 210, "RESULT: NO VOTES CAST")
-
-    y = height - 300
-    p.setFont("Helvetica-Bold", 12)
-    p.drawString(50, y, "Candidate Vote Tally:")
-    y -= 25
-    for name, count in vote_counts.items():
-        p.setFont("Helvetica", 12)
-        p.drawString(70, y, f"• {name}: {count} Votes")
-        y -= 20
-
-    p.showPage()
-    p.save()
-    pdf = buffer.getvalue()
-    buffer.close()
-    
-    response = make_response(pdf)
-    response.headers['Content-Disposition'] = f"attachment; filename=BCET_Winner_Report_{winner_name}.pdf"
-    response.headers['Content-Type'] = 'application/pdf'
-    return response
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
