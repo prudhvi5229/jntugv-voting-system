@@ -160,6 +160,8 @@
             border-radius: 10px;
             font-size: 0.9rem;
             font-weight: 600;
+            width: 100%;
+            box-sizing: border-box;
         }
         [data-theme="dark"] .input-field { background: #090d16; }
 
@@ -197,13 +199,15 @@
         [data-theme="dark"] .log-box { background: #090d16; }
         .log-item { padding: 6px 0; border-bottom: 1px dashed var(--border-color); color: #ef4444; }
 
+        /* ఫిక్స్: మొబైల్ ఫోన్లలో టైమ్ బాక్స్‌లు పక్కకి పోకుండా ఒకదాని కింద ఒకటి నీట్‌గా రావడానికి మార్పు */
         .time-picker-row {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 16px;
             margin-bottom: 20px;
+            width: 100%;
         }
-        .time-input-group { display: flex; flex-direction: column; gap: 6px; }
+        .time-input-group { display: flex; flex-direction: column; gap: 6px; width: 100%; }
         .time-input-group label { font-size: 0.75rem; color: var(--text-sub); font-weight: 700; text-transform: uppercase; }
 
         .upload-btn {
@@ -220,7 +224,6 @@
             gap: 4px;
         }
         
-        /* LIVE PREVIEW BOX STYLES */
         .upload-group {
             display: flex;
             align-items: center;
@@ -291,9 +294,9 @@
                 <input type="datetime-local" id="endTimeInput" class="input-field" value="{{ settings.end_time }}">
             </div>
         </div>
-        <div style="display: flex; gap: 12px;">
-            <button class="btn" style="background: var(--btn-primary); flex-grow: 1;" onclick="updateTimeWindow()">Update Deployment Window</button>
-            <button class="btn" style="background: var(--btn-danger);" onclick="emergencyShutdown()">Emergency Lock</button>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <button class="btn" style="background: var(--btn-primary); flex-grow: 1; min-width: 180px;" onclick="updateTimeWindow()">Update Deployment Window</button>
+            <button class="btn" style="background: var(--btn-danger); min-width: 120px;" onclick="emergencyShutdown()">Emergency Lock</button>
         </div>
     </div>
 
@@ -303,9 +306,9 @@
         <div id="candidate-container">
             <!-- Injected via JavaScript Loop -->
         </div>
-        <div style="display: flex; gap: 12px; margin-top: 18px;">
-            <button class="btn" style="background: #475569; width: 40%;" onclick="addNewCandidateRow()">+ Add New Candidate Row</button>
-            <button class="btn" style="background: var(--btn-success); width: 60%;" onclick="synchronizeCandidatesData()">Synchronize & Save List</button>
+        <div style="display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap;">
+            <button class="btn" style="background: #475569; flex-grow: 1; min-width: 150px;" onclick="addNewCandidateRow()">+ Add New Candidate Row</button>
+            <button class="btn" style="background: var(--btn-success); flex-grow: 2; min-width: 200px;" onclick="synchronizeCandidatesData()">Synchronize & Save List</button>
         </div>
     </div>
 
@@ -366,29 +369,26 @@
             const row = document.createElement('div');
             row.className = "candidate-row";
             
-            // డిఫాల్ట్ సింబల్ లేదా బేస్64 ప్రివ్యూ సెటప్
             const symbolSrc = (candidate.symbol && candidate.symbol.startsWith('data:image')) ? candidate.symbol : '';
             const photoSrc = (candidate.manifesto && candidate.manifesto.startsWith('data:image')) ? candidate.manifesto : '';
             
             row.innerHTML = `
                 <input type="text" class="input-field candidate-name" value="${candidate.name}" placeholder="Name" style="width: 110px;">
                 
-                <!-- 1. OWN PARTY SYMBOL IMAGE UPLOADER (NO TEXT EMOJIS) -->
                 <div class="upload-group">
                     <img id="symbol-preview-${index}" class="live-preview-circle" src="${symbolSrc || 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2364748b%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z%22/><path d=%22M12 16v-4%22/><path d=%22M12 8h.01%22/></svg>'}" alt="Symbol">
                     <input type="file" accept="image/*" style="display: none;" id="symbol-input-${index}" onchange="processLocalSymbolUpload(this, ${index})">
                     <button type="button" class="upload-btn" style="background: #8b5cf6;" onclick="document.getElementById('symbol-input-${index}').click()">
-                        🎨 Upload Symbol
+                        🎨 Symbol
                     </button>
                     <input type="hidden" class="candidate-symbol-data" id="symbol-url-${index}" value="${candidate.symbol || ''}">
                 </div>
 
-                <!-- 2. CANDIDATE PHOTO UPLOADER WITH LIVE PREVIEW -->
                 <div class="upload-group">
                     <img id="photo-preview-${index}" class="live-preview-circle" src="${photoSrc || 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2364748b%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2%22/><circle cx=%2212%22 cy=%227%22 r=%224%22/></svg>'}" alt="Photo">
                     <input type="file" accept="image/*" style="display: none;" id="file-input-${index}" onchange="processManifestoMediaUpload(this, ${index})">
                     <button type="button" class="upload-btn" onclick="document.getElementById('file-input-${index}').click()">
-                        📸 Upload Photo
+                        📸 Photo
                     </button>
                     <input type="hidden" class="candidate-manifesto-url" id="manifesto-url-${index}" value="${candidate.manifesto || ''}">
                 </div>
@@ -407,7 +407,6 @@
         });
     }
 
-    // ఓన్ సింబల్ బేస్64 కన్వర్టర్ & లైవ్ ప్రివ్యూ ఫంక్షన్
     function processLocalSymbolUpload(input, index) {
         const file = input.files[0];
         if (!file) return;
@@ -421,7 +420,6 @@
         };
     }
 
-    // క్యాండిడేట్ ఫోటో బేస్64 కన్వర్టర్ & లైవ్ ప్రివ్యూ ఫంక్షన్
     function processManifestoMediaUpload(input, index) {
         const file = input.files[0];
         if (!file) return;
