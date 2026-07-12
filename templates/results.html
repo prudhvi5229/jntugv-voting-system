@@ -197,14 +197,14 @@
 </head>
 <body>
 
-<!-- TOP NAVIGATION BAR WITH MENU -->
+<!-- TOP NAVIGATION BAR WITH WORKING BURGER MENU -->
 <div class="top-navbar">
     <div class="menu-burger" onclick="window.location.href='/'" title="Go to Voting Dashboard">
         <span></span>
         <span></span>
         <span></span>
     </div>
-    <div style="font-size: 0.85rem; font-weight: 700; background: rgba(239, 68, 68, 0.15); color: #fca5a5; padding: 8px 16px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.2);">
+    <div style="font-size: 0.85rem; font-weight: 700; background: rgba(255, 255, 255, 0.05); color: var(--text-main); padding: 8px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
         ADMIN_PRO_NODE
     </div>
 </div>
@@ -217,9 +217,9 @@
             <h1>BCET Control Hub</h1>
             <p>Cryptographic Node: Active</p>
         </div>
-        <a href="/download-results/{{ settings.admin_secret }}" class="btn" style="background: var(--btn-success); text-decoration: none; line-height: 1.2;">
+        <button class="btn" style="background: var(--btn-success);" onclick="alert('Exporting Report Module...')">
             📥 Export PDF Report
-        </a>
+        </button>
     </div>
 
     <!-- LIVE STAT COUNTERS -->
@@ -272,7 +272,7 @@
             {% if logs %}
                 {% for log in logs %}
                 <div class="log-item">
-                    ⚠️ [ALERT] Student Node ID [{{ log.id }}] triggered a security exception: {{ log.reason }} from Client IP: {{ log.ip }} @ {{ log.time }}
+                    ⚠️ [ALERT] Student Node ID [{{ log.id }}] triggered a security exception: {{ log.reason }} @ {{ log.time }}
                 </div>
                 {% endfor %}
             {% else %}
@@ -312,6 +312,7 @@
                 <input type="text" class="input-field candidate-name" value="${candidate.name}" placeholder="Name" style="width: 100px;">
                 <input type="text" class="input-field candidate-symbol" value="${candidate.symbol}" placeholder="Symbol" style="width: 50px; text-align: center;">
                 
+                <!-- LOCAL BACKEND FILE STORAGE UPLOADER -->
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <input type="file" accept="image/*" style="display: none;" id="file-input-${index}" onchange="processManifestoMediaUpload(this, ${index})">
                     <button type="button" class="upload-btn" onclick="document.getElementById('file-input-${index}').click()">
@@ -337,7 +338,7 @@
         });
     }
 
-    // STABILIZED FREE CDN UPLOADER PIPELINE
+    // LOCAL SERVER MEDIA PIPELINE UPLOADER (NO THIRD PARTY REJECTIONS)
     function processManifestoMediaUpload(input, index) {
         const assetFile = input.files[0];
         if (!assetFile) return;
@@ -348,28 +349,27 @@
         const packet = new FormData();
         packet.append("image", assetFile);
 
-        // FALLBACK STABLE API GATEWAY
-        fetch("https://api.imgbb.com/1/upload?key=8e610d47de3a1677c7c0060934d402b8", {
+        fetch("/admin/upload_image", {
             method: "POST",
             body: packet
         })
         .then(res => {
-            if(!res.ok) throw new Error("HTTP Rejection Network Code Status");
+            if(!res.ok) throw new Error("Server Error");
             return res.json();
         })
         .then(payload => {
             if (payload && payload.success) {
-                const CDN_Link = payload.data.url;
-                document.getElementById(`manifesto-url-${index}`).value = CDN_Link;
-                uploadIndicator.innerHTML = `<a href="${CDN_Link}" target="_blank" style="color: #22c55e; text-decoration: none; font-weight: 800;">✅ View</a>`;
+                const Local_Link = payload.url;
+                document.getElementById(`manifesto-url-${index}`).value = Local_Link;
+                uploadIndicator.innerHTML = `<a href="${Local_Link}" target="_blank" style="color: #22c55e; text-decoration: none; font-weight: 800;">✅ View</a>`;
             } else {
-                throw new Error("Payload packet transmission structural missing parameters");
+                throw new Error();
             }
         })
         .catch(err => {
-            console.error("Asset node exception standard trace logs:", err);
+            console.error("Local Storage sync trace error:", err);
             uploadIndicator.innerHTML = "<span style='color: #ef4444;'>❌ Failed</span>";
-            alert("Upload structural error. Please try converting to standard JPEG/PNG format or verify connection nodes.");
+            alert("Storage upload pipeline failed. Standardize file asset dimensions.");
         });
     }
 
@@ -407,7 +407,7 @@
         .then(res => res.json())
         .then(data => {
             if (data.status === "success") {
-                alert("Success! Candidate structure matrix updated live into server memory environment.");
+                alert("Candidate structure updated into server storage environment.");
                 window.location.reload();
             }
         });
@@ -424,7 +424,7 @@
         })
         .then(res => res.json())
         .then(data => {
-            if(data.status === "success") alert("Persistent Time thresholds aligned correctly!");
+            if(data.status === "success") alert("Time thresholds aligned correctly!");
         });
     }
 
@@ -432,7 +432,7 @@
         fetch('/stop_election', { method: 'POST' })
         .then(res => res.json())
         .then(data => {
-            if(data.status === "success") alert("LOCKOUT ACTIVATED: Voting nodes securely frozen.");
+            if(data.status === "success") alert("LOCKOUT ACTIVATED.");
         });
     }
 
@@ -441,10 +441,7 @@
             fetch('/reset_election', { method: 'POST' })
             .then(res => res.json())
             .then(data => {
-                if(data.status === "success") {
-                    alert("Blockchain successfully reset to Genesis block parameters!");
-                    window.location.reload();
-                }
+                if(data.status === "success") window.location.reload();
             });
         }
     }
