@@ -52,7 +52,7 @@ def init_db():
 
 init_db()
 
-# --- UPDATED: CANDIDATES STRUCT CONTAINS DEFAULT MANIFESTOS ---
+# --- UPDATED CANDIDATES WINDOW STRUCT WITH PERSISTENT TIMELINE ---
 ELECTION_SETTINGS = {
     "candidates": [
         {
@@ -66,9 +66,9 @@ ELECTION_SETTINGS = {
             "manifesto": "Aiming to upgrade sport complexes, organizing inter-college hackathons and continuous cultural fests, alongside building professional technical incubation workspace programs."
         }
     ],
-    "start_time": "2026-02-23T09:00",
-    "end_time": "2026-02-28T23:59",
-    "is_active": False,
+    "start_time": "2026-06-26T12:01",
+    "end_time": "2026-06-28T02:01",
+    "is_active": True,
     "authorized_prefix": "24V11A",
     "range_start": 501,
     "range_end": 580,
@@ -352,7 +352,7 @@ def clear_accounts():
     
     return jsonify({"status": "error", "message": "Unauthorized!"}), 403
 
-# --- UPDATED: DYNAMIC SYNC ROUTE PROCESSES MANIFESTO ARRAY DATA FROM CLIENT ---
+# --- MANIFESTO MANAGEMENT CONTROLLER ---
 @app.route('/sync_candidates', methods=['POST'])
 def sync_candidates():
     incoming_data = request.json

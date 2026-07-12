@@ -7,7 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* LIGHT MODE PRESETS MATCHING SCREENSHOT GLOWS */
             --bg-gradient: linear-gradient(135deg, #e0e7ff 0%, #ede9fe 100%);
             --card-bg: #ffffff;
             --text-main: #1e293b;
@@ -27,7 +26,6 @@
         }
 
         [data-theme="dark"] {
-            /* DARK MODE EXACT MATCHING YOUR IMAGE BACKGROUNDS */
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
             --card-bg: #151f32;
             --text-main: #f8fafc;
@@ -56,7 +54,6 @@
             transition: all 0.3s ease;
         }
 
-        /* ACTIONS PANEL BAR */
         .top-bar {
             width: 100%;
             display: flex;
@@ -95,7 +92,6 @@
             border: 1px solid rgba(239, 68, 68, 0.2);
         }
 
-        /* GLASS CARD CONTAINMENT container */
         .main-card {
             background: var(--card-bg);
             width: 92%; max-width: 440px;
@@ -119,7 +115,6 @@
         h2 { font-size: 1.7rem; margin: 0; color: var(--text-main); font-weight: 800; letter-spacing: -0.5px; }
         .sub-heading { font-size: 0.75rem; color: var(--text-sub); margin-bottom: 24px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
 
-        /* VOTER SECURITY IDENTITY NODE CONTAINER */
         .voter-identity-dashboard {
             background: var(--dashboard-bg);
             padding: 16px;
@@ -151,7 +146,6 @@
         .hash-chain-label { font-size: 0.55rem; color: var(--text-sub); font-weight: 700; text-transform: uppercase; }
         .hash-chain-value { font-size: 0.65rem; font-family: monospace; color: #3b82f6; word-break: break-all; margin: 2px 0 0 0; }
 
-        /* CHRISP SPLIT TIMER BOX PATTERN FROM IMAGE */
         .timer-strip {
             background: var(--timer-box-bg);
             border: 1px solid var(--timer-box-border);
@@ -190,7 +184,6 @@
             display: block;
         }
 
-        /* HIGH-TECH GLOW CARDS SPACE DESIGN */
         .candidate-grid-space {
             display: flex;
             flex-direction: column;
@@ -212,7 +205,6 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.02);
         }
 
-        /* NEON NESTED GLOW APPLIED TO BOTH LIGHT & DARK MODES */
         .interactive-card:hover {
             transform: translateY(-2px);
             border-color: rgba(59, 130, 246, 0.4);
@@ -229,7 +221,6 @@
             opacity: 0; width: 0; height: 0;
         }
 
-        /* RADIAL SELECTIVE CIRCLE ELEMENT */
         .custom-indicator-circle {
             width: 22px; height: 22px;
             border: 2px solid var(--border-color);
@@ -297,7 +288,6 @@
         }
         .manifesto-trigger-link:hover { text-decoration: underline; }
 
-        /* EXCLUSIVE SELECT/SELECTED BADGE RIGHT NODE */
         .badge-select-status {
             font-size: 0.7rem;
             background: var(--select-badge-bg);
@@ -312,10 +302,8 @@
             background: #2563eb;
             color: white;
             border-color: #2563eb;
-            content: "Selected";
         }
 
-        /* GLOWING AMBIENT GRADIENT ACTION BUTTON */
         .btn-confirm-gradient {
             width: 100%;
             background: var(--btn-gradient);
@@ -358,7 +346,6 @@
         .quote-container { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color); }
         .quote-text { font-style: italic; color: var(--text-sub); font-size: 0.75rem; font-weight: 600; }
 
-        /* MODAL POPUP FOR MANIFESTO VIEW */
         .manifesto-modal {
             display: none;
             position: fixed;
@@ -443,7 +430,7 @@
                 
                 <div class="candidate-details-block">
                     <span class="candidate-card-name">{{ c.name }}</span>
-                    <span class="manifesto-trigger-link" onclick="openManifesto(event, '{{ c.name }}', '{{ c.symbol }}')">View Manifesto</span>
+                    <span class="manifesto-trigger-link" onclick="openManifesto(event, '{{ c.name }}', '{{ c.symbol }}', '{{ c.manifesto | escape }}')">View Manifesto</span>
                 </div>
                 
                 <span class="badge-select-status">Select</span>
@@ -484,9 +471,7 @@
 </div>
 
 <script>
-    // CORE FUNCTION TO SWAP DYNAMIC SELECT/SELECTED BUTTON TEXT STATE
     function updateBadgeStates() {
-        // Short timeout to let the browser register radio checked input change state
         setTimeout(() => {
             const cards = document.querySelectorAll('.interactive-card');
             cards.forEach(card => {
@@ -510,7 +495,7 @@
         document.getElementById('themeBtn').innerHTML = targetTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
     }
 
-    const savedTheme = localStorage.getItem('bcet-theme') || 'dark'; // Defaults beautifully to dark mode
+    const savedTheme = localStorage.getItem('bcet-theme') || 'dark';
     if(savedTheme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
         document.getElementById('themeBtn').innerHTML = '☀️ Light Mode';
@@ -519,16 +504,11 @@
         document.getElementById('themeBtn').innerHTML = '🌙 Dark Mode';
     }
 
-    const agendas = {
-        "Ramu": "Focusing on implementing advanced digital laboratories, deploying high-speed Wi-Fi infrastructures across blocks, and establishing AI research hubs within the campus node networks.",
-        "Laxman": "Aiming to upgrade sport complexes, organizing inter-college hackathons and continuous cultural fests, alongside building professional technical incubation workspace programs."
-    };
-
-    function openManifesto(e, name, symbol) {
+    function openManifesto(e, name, symbol, manifestoText) {
         e.preventDefault();
-        e.stopPropagation(); // Stops row select from triggering accidentally
+        e.stopPropagation(); 
         document.getElementById('mHeader').innerHTML = symbol + " " + name + "'s Vision";
-        document.getElementById('mBody').innerHTML = agendas[name] || "This candidate commits to building academic excellence and technological advancement models within the BCET engineering ecosystem network.";
+        document.getElementById('mBody').innerHTML = manifestoText || "This candidate commits to building excellence within the BCET ecosystem network.";
         document.getElementById('manifestoModal').style.display = 'flex';
     }
 
