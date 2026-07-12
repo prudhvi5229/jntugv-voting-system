@@ -143,12 +143,13 @@
         .candidate-row {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
             background: var(--dashboard-bg);
             border: 1px solid var(--border-color);
-            padding: 12px 16px;
+            padding: 16px;
             border-radius: 14px;
             margin-bottom: 12px;
+            flex-wrap: wrap;
         }
 
         .input-field {
@@ -176,7 +177,7 @@
 
         .tally-bar-wrapper {
             flex-grow: 1;
-            margin-left: 20px;
+            min-width: 150px;
         }
         .tally-labels { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; }
         .tally-progress-bg { width: 100%; height: 8px; background: rgba(0,0,0,0.05); border-radius: 10px; overflow: hidden; }
@@ -209,20 +210,40 @@
             background: #3b82f6; 
             color: white; 
             border: none; 
-            padding: 8px 14px; 
+            padding: 8px 12px; 
             border-radius: 8px; 
             font-weight: 600; 
             cursor: pointer; 
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             display: flex;
             align-items: center;
             gap: 4px;
+        }
+        
+        /* LIVE PREVIEW BOX STYLES */
+        .upload-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.02);
+            padding: 6px 12px;
+            border-radius: 12px;
+            border: 1px dashed var(--border-color);
+        }
+        .live-preview-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            background: rgba(0,0,0,0.1);
+            object-fit: cover;
+            display: block;
         }
     </style>
 </head>
 <body>
 
-<!-- TOP NAVIGATION BAR WITH BURGER & NIGHT MODE -->
+<!-- TOP NAVIGATION BAR -->
 <div class="top-navbar">
     <div class="menu-burger" onclick="window.location.href='/'" title="Go to Voting Dashboard">
         <span></span>
@@ -344,20 +365,32 @@
 
             const row = document.createElement('div');
             row.className = "candidate-row";
+            
+            // డిఫాల్ట్ సింబల్ లేదా బేస్64 ప్రివ్యూ సెటప్
+            const symbolSrc = (candidate.symbol && candidate.symbol.startsWith('data:image')) ? candidate.symbol : '';
+            const photoSrc = (candidate.manifesto && candidate.manifesto.startsWith('data:image')) ? candidate.manifesto : '';
+            
             row.innerHTML = `
-                <input type="text" class="input-field candidate-name" value="${candidate.name}" placeholder="Name" style="width: 100px;">
-                <input type="text" class="input-field candidate-symbol" value="${candidate.symbol}" placeholder="Symbol" style="width: 50px; text-align: center;">
+                <input type="text" class="input-field candidate-name" value="${candidate.name}" placeholder="Name" style="width: 110px;">
                 
-                <!-- STABLE LOCAL BROWSER IN-MEMORY BASE64 STREAM -->
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <!-- 1. OWN PARTY SYMBOL IMAGE UPLOADER (NO TEXT EMOJIS) -->
+                <div class="upload-group">
+                    <img id="symbol-preview-${index}" class="live-preview-circle" src="${symbolSrc || 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2364748b%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z%22/><path d=%22M12 16v-4%22/><path d=%22M12 8h.01%22/></svg>'}" alt="Symbol">
+                    <input type="file" accept="image/*" style="display: none;" id="symbol-input-${index}" onchange="processLocalSymbolUpload(this, ${index})">
+                    <button type="button" class="upload-btn" style="background: #8b5cf6;" onclick="document.getElementById('symbol-input-${index}').click()">
+                        🎨 Upload Symbol
+                    </button>
+                    <input type="hidden" class="candidate-symbol-data" id="symbol-url-${index}" value="${candidate.symbol || ''}">
+                </div>
+
+                <!-- 2. CANDIDATE PHOTO UPLOADER WITH LIVE PREVIEW -->
+                <div class="upload-group">
+                    <img id="photo-preview-${index}" class="live-preview-circle" src="${photoSrc || 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2364748b%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2%22/><circle cx=%2212%22 cy=%227%22 r=%224%22/></svg>'}" alt="Photo">
                     <input type="file" accept="image/*" style="display: none;" id="file-input-${index}" onchange="processManifestoMediaUpload(this, ${index})">
                     <button type="button" class="upload-btn" onclick="document.getElementById('file-input-${index}').click()">
                         📸 Upload Photo
                     </button>
                     <input type="hidden" class="candidate-manifesto-url" id="manifesto-url-${index}" value="${candidate.manifesto || ''}">
-                    <span id="upload-status-${index}" style="font-size: 0.8rem; font-weight: 700; min-width: 45px;">
-                        ${candidate.manifesto ? `<span style="color: #22c55e;">✅ Loaded</span>` : `<span style="color: #64748b;">No File</span>`}
-                    </span>
                 </div>
 
                 <div class="tally-bar-wrapper">
@@ -374,36 +407,37 @@
         });
     }
 
-    // 100% ఎర్రర్-ఫ్రీ లోకల్ బ్రౌజర్ Base64 కన్వర్టర్ (ఏ ఆన్‌లైన్ క్లౌడ్ గేట్‌వేస్ అవసరం లేదు)
-    function processManifestoMediaUpload(input, index) {
+    // ఓన్ సింబల్ బేస్64 కన్వర్టర్ & లైవ్ ప్రివ్యూ ఫంక్షన్
+    function processLocalSymbolUpload(input, index) {
         const file = input.files[0];
         if (!file) return;
-
-        const uploadIndicator = document.getElementById(`upload-status-${index}`);
-        if (uploadIndicator) {
-            uploadIndicator.innerHTML = "<span style='color: #3b82f6;'>⏳ loading...</span>";
-        }
 
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = function () {
-            // ఇమేజ్ డేటాని డైరెక్ట్ గా ఒక లాంగ్ టెక్స్ట్ స్ట్రింగ్ లాగా మార్చి హిడెన్ ఇన్‌పుట్ లో భద్రపరుస్తుంది
+            const base64Data = reader.result;
+            document.getElementById(`symbol-url-${index}`).value = base64Data;
+            document.getElementById(`symbol-preview-${index}`).src = base64Data;
+        };
+    }
+
+    // క్యాండిడేట్ ఫోటో బేస్64 కన్వర్టర్ & లైవ్ ప్రివ్యూ ఫంక్షన్
+    function processManifestoMediaUpload(input, index) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function () {
             const base64Data = reader.result;
             document.getElementById(`manifesto-url-${index}`).value = base64Data;
-            
-            if (uploadIndicator) {
-                uploadIndicator.innerHTML = "<span style='color: #22c55e;'>✅ Loaded</span>";
-            }
-        };
-        reader.onerror = function() {
-            if (uploadIndicator) uploadIndicator.innerHTML = "<span style='color: #ef4444;'>❌ Failed</span>";
-            alert("Local conversion failed.");
+            document.getElementById(`photo-preview-${index}`).src = base64Data;
         };
     }
 
     function addNewCandidateRow() {
         synchronizeLocalConfigStates();
-        electionConfig.candidates.push({ name: "", symbol: "👤", manifesto: "" });
+        electionConfig.candidates.push({ name: "", symbol: "", manifesto: "" });
         
         const currentTotal = Object.values(electionConfig.voteCounts).reduce((a, b) => a + b, 0);
         renderCandidateMatrix(currentTotal);
@@ -415,7 +449,7 @@
         
         rows.forEach((row, i) => {
             const name = row.querySelector('.candidate-name').value.trim();
-            const symbol = row.querySelector('.candidate-symbol').value.trim();
+            const symbol = document.getElementById(`symbol-url-${i}`).value.trim();
             const manifesto = document.getElementById(`manifesto-url-${i}`).value.trim();
             
             if (name) {
