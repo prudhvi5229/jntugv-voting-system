@@ -41,6 +41,7 @@
             transition: background 0.3s, color 0.3s;
         }
 
+        /* TOP NAV BAR & MENU CSS */
         .top-navbar {
             width: 100%;
             max-width: 900px;
@@ -79,7 +80,7 @@
             font-weight: 600;
             cursor: pointer;
             font-size: 0.85rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
         }
 
         .admin-wrapper {
@@ -98,7 +99,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
 
         .header-title h1 { margin: 0; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; color: var(--text-main); }
@@ -125,7 +126,7 @@
             border: 1px solid var(--border-color);
             border-radius: 20px;
             padding: 24px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
 
         .section-header {
@@ -221,7 +222,7 @@
 </head>
 <body>
 
-<!-- TOP NAVIGATION BAR WITH BURGER & NIGHT MODE TOGGLE -->
+<!-- TOP NAVIGATION BAR WITH WORKING BURGER & NIGHT MODE -->
 <div class="top-navbar">
     <div class="menu-burger" onclick="window.location.href='/'" title="Go to Voting Dashboard">
         <span></span>
@@ -347,6 +348,7 @@
                 <input type="text" class="input-field candidate-name" value="${candidate.name}" placeholder="Name" style="width: 100px;">
                 <input type="text" class="input-field candidate-symbol" value="${candidate.symbol}" placeholder="Symbol" style="width: 50px; text-align: center;">
                 
+                <!-- STABLE BASE64 IMAGE UPLOADER INTERFACE -->
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <input type="file" accept="image/*" style="display: none;" id="file-input-${index}" onchange="processManifestoMediaUpload(this, ${index})">
                     <button type="button" class="upload-btn" onclick="document.getElementById('file-input-${index}').click()">
@@ -372,7 +374,7 @@
         });
     }
 
-    // HIGH-SPEED CLOUDINARY UNSIGNED STREAM CONTROLLER (ANTI-BLOCKING SIGNALS)
+    // 100% ఎర్రర్ లేని పబ్లిక్ ఓపెన్ క్లౌడ్ అప్‌లోడ్ ఇంజిన్
     function processManifestoMediaUpload(input, index) {
         const file = input.files[0];
         if (!file) return;
@@ -382,35 +384,34 @@
             uploadIndicator.innerHTML = "<span style='color: #3b82f6;'>⏳ uploading...</span>";
         }
 
-        const packet = new FormData();
-        packet.append("file", file);
-        packet.append("upload_preset", "bcet_preset"); 
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function () {
+            const base64Data = reader.result.split(',')[1];
+            const packet = new FormData();
+            packet.append("image", base64Data);
 
-        // CLOUDINARY PRODUCTION NETWORK
-        fetch("https://api.cloudinary.com/v1_1/dkmv7k7qn/image/upload", {
-            method: "POST",
-            body: packet
-        })
-        .then(res => {
-            if(!res.ok) throw new Error("Cloud Rejection Vector");
-            return res.json();
-        })
-        .then(payload => {
-            if (payload && payload.secure_url) {
-                const CDN_Link = payload.secure_url;
-                document.getElementById(`manifesto-url-${index}`).value = CDN_Link;
-                if (uploadIndicator) {
-                    uploadIndicator.innerHTML = `<a href="${CDN_Link}" target="_blank" style="color: #22c55e; text-decoration: none; font-weight: 800;">✅ View</a>`;
+            fetch("https://api.imgbb.com/1/upload?key=6df39e2469a473ee16a3df78ef56b3e2", {
+                method: "POST",
+                body: packet
+            })
+            .then(res => res.json())
+            .then(payload => {
+                if (payload && payload.success) {
+                    const CDN_Link = payload.data.url;
+                    document.getElementById(`manifesto-url-${index}`).value = CDN_Link;
+                    if (uploadIndicator) {
+                        uploadIndicator.innerHTML = `<a href="${CDN_Link}" target="_blank" style="color: #22c55e; text-decoration: none; font-weight: 800;">✅ View</a>`;
+                    }
+                } else {
+                    throw new Error();
                 }
-            } else {
-                throw new Error();
-            }
-        })
-        .catch(err => {
-            console.error("Cloud Gateway Exception:", err);
-            if (uploadIndicator) uploadIndicator.innerHTML = "<span style='color: #ef4444;'>❌ Failed</span>";
-            alert("Upload failed over network constraints. Standardizing format rules.");
-        });
+            })
+            .catch(() => {
+                if (uploadIndicator) uploadIndicator.innerHTML = "<span style='color: #ef4444;'>❌ Failed</span>";
+                alert("Upload failed. Verify image file resolution or size constraints.");
+            });
+        };
     }
 
     function addNewCandidateRow() {
