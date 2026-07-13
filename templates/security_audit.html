@@ -66,6 +66,7 @@
             text-align: center;
             margin-top: 10px;
         }
+        .btn-back:hover { filter: brightness(1.1); }
     </style>
 </head>
 <body>
@@ -76,19 +77,51 @@
     <div class="audit-list">
         <div class="audit-card">
             <h3>🔒 Tri-Node Consensus Engine</h3>
-            <p>Ballot transactions are cross-checked and verified across three independent, synchronized database instances synchronously to prevent block mutability attacks.</p>
+            <p>Votes are saved into three separate virtual database copies at the same time. If a hacker changes one copy, the other two copies instantly reject the change.</p>
         </div>
         <div class="audit-card">
             <h3>🔒 Salty Ballot Obfuscation</h3>
-            <p>Candidate choices are transformed into secure SHA-256 hashes utilizing dynamic salts prior to ledger insertion, rendering anonymous choices non-reversible.</p>
+            <p>Candidate names are converted into encrypted secret codes before storing. Even the server owner cannot read who voted for whom inside the backend ledger.</p>
         </div>
         <div class="audit-card">
             <h3>🔒 Zero-Knowledge Token Binding</h3>
-            <p>Voter auth tokens are bound directly to user IP footprints and active browser state metadata to prevent unauthorized third-party packet sniffing or replay attempts.</p>
+            <p>Locks your secret voting token directly to your phone's IP address and browser session. Nobody can steal your token to vote from another computer.</p>
         </div>
         <div class="audit-card">
             <h3>🔒 Forensic Intrusion Lockout</h3>
-            <p>Automated deep-inspection loops scan node integrity constantly. Detection of external database file manipulation immediately fires a system-wide freeze switch.</p>
+            <p>If the system detects a high-level hacking attempt or database modification, it automatically freezes the entire app completely to save data.</p>
+        </div>
+        <div class="audit-card">
+            <h3>🔒 Anti-DDoS Rate Limiting</h3>
+            <p>Blocks hackers or bad automated bots who try to send thousands of rapid requests to crash or slow down the college election server.</p>
+        </div>
+        <div class="audit-card">
+            <h3>🔒 SQLi & XSS Sanitation</h3>
+            <p>Cleans and scans all input fields like Hall Ticket and Passwords. It prevents hackers from injecting harmful script commands into our system.</p>
+        </div>
+        <div class="audit-card">
+            <h3>🔒 Session Hijack Interceptors</h3>
+            <p>If a logged-in student's network IP changes suddenly during the vote, the system recognizes it as a hack and automatically logs them out.</p>
+        </div>
+        <div class="audit-card">
+            <h3>🔒 Immutable Nullifier Cache</h3>
+            <p>Converts each student's ID into a one-time cryptographic lock. Once a student votes, their token is destroyed, making double voting 100% impossible.</p>
+        </div>
+        <div class="audit-card">
+            <h3>🔒 SHA-256 Link Integrity Auto-Check</h3>
+            <p>Every block is digitally glued to the block before it. If a hacker edits an old vote, the cryptographic chain link breaks and triggers a security error.</p>
+        </div>
+        <div class="audit-card">
+            <h3>🔒 Brute-Force IP Lockout</h3>
+            <p>If any user tries to guess a password and enters a wrong password 5 times, the server completely blocks that IP address from trying again.</p>
+        </div>
+        <div class="audit-card">
+            <h3>🔒 Master Override Routing Key</h3>
+            <p>Ensures that only the authorized college administrator can break an emergency forensic freeze and safely reboot the system using a secret key.</p>
+        </div>
+        <div class="audit-card">
+            <h3>🔒 Zero-Cloud Local Privacy</h3>
+            <p>No student photos or election data are uploaded to third-party public clouds. Everything is handled locally via encoded base64 text for total security.</p>
         </div>
     </div>
 
