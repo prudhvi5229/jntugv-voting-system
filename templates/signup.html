@@ -90,7 +90,8 @@
     <h2>Voter Registration</h2>
     <div class="sub-heading">Complete your profile to enable secure<br>Blockchain voting access.</div>
 
-    <form id="signupForm" onsubmit="event.preventDefault();">
+    <!-- FIXED: Added explicit form actions and dynamic listener hooks -->
+    <form id="signupForm" onsubmit="handleInitialSignupRequest(event);">
         <div id="registrationInputs">
             <div class="input-group">
                 <span class="label-text">Hall Ticket Number</span>
@@ -114,14 +115,14 @@
                 <button type="button" class="toggle-btn" onclick="togglePassword('pwd_confirm')">👁️</button>
             </div>
 
-            <!-- FIXED: This button now triggers the correct modern async function -->
-            <button type="button" id="primarySubmitBtn" class="btn-register" onclick="handleInitialSignupRequest()">Register Account</button>
+            <!-- FIXED: Changed type to submit so form execution doesn't freeze -->
+            <button type="submit" id="primarySubmitBtn" class="btn-register">Register Account</button>
         </div>
 
         <div id="otpVerificationSection" style="display: none; border-top: 2px dashed #e2e8f0; margin-top: 25px; padding-top: 20px;">
             <div class="input-group">
                 <span class="label-text" style="color: var(--accent-green);">Enter 6-Digit Email OTP</span>
-                <input type="text" id="email_otp_input" class="styled-input" placeholder="Check your Gmail inbox" style="border-color: #a7f3d0;" required>
+                <input type="text" id="email_otp_input" class="styled-input" placeholder="Check your Gmail inbox" style="border-color: #a7f3d0;">
             </div>
             <button type="button" class="btn-register" style="background: #2563eb; box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25);" onclick="handleFinalRegistrationVerification()">Verify OTP & Activate Node</button>
         </div>
@@ -140,7 +141,9 @@
         input.type = input.type === 'password' ? 'text' : 'password';
     }
 
-    async function handleInitialSignupRequest() {
+    async function handleInitialSignupRequest(event) {
+        if(event) event.preventDefault();
+
         const sid = document.getElementById('sid').value.trim();
         const email = document.getElementById('email').value.trim();
         const pwd = document.getElementById('pwd').value;
@@ -161,7 +164,7 @@
             return;
         }
         
-        msgElement.innerText = "Processing secure credentials & broadcasting verification token...";
+        msgElement.innerText = "Processing credentials & sending verification token...";
         msgElement.style.background = "#f8fafc";
         msgElement.style.color = "#475569";
 
@@ -170,23 +173,29 @@
         formData.append('email', email);
         formData.append('password', pwd);
 
-        const response = await fetch('/send_signup_otp', {
-            method: 'POST',
-            body: formData
-        });
-        
-        const data = await response.json();
-        msgElement.innerText = data.message;
-        
-        if(data.status === 'success') {
-            msgElement.style.background = "#ecfdf5";
-            msgElement.style.color = "#065f46";
+        try {
+            const response = await fetch('/send_signup_otp', {
+                method: 'POST',
+                body: formData
+            });
             
-            document.getElementById('otpVerificationSection').style.display = 'block';
-            document.getElementById('primarySubmitBtn').disabled = true;
-            document.getElementById('primarySubmitBtn').style.background = "#cbd5e1";
-            document.getElementById('primarySubmitBtn').style.cursor = "not-allowed";
-        } else {
+            const data = await response.json();
+            msgElement.innerText = data.message;
+            
+            if(data.status === 'success') {
+                msgElement.style.background = "#ecfdf5";
+                msgElement.style.color = "#065f46";
+                
+                document.getElementById('otpVerificationSection').style.display = 'block';
+                document.getElementById('primarySubmitBtn').disabled = true;
+                document.getElementById('primarySubmitBtn').style.background = "#cbd5e1";
+                document.getElementById('primarySubmitBtn').style.cursor = "not-allowed";
+            } else {
+                msgElement.style.background = "#fef2f2";
+                msgElement.style.color = "#991b1b";
+            }
+        } catch (error) {
+            msgElement.innerText = "Network transmission error occurred.";
             msgElement.style.background = "#fef2f2";
             msgElement.style.color = "#991b1b";
         }

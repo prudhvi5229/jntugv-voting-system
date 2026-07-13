@@ -4,36 +4,47 @@ import time
 from datetime import datetime
 import pytz
 from io import BytesIO
-import sqlite3 
-import re 
-import random 
-import smtplib 
+import sqlite3 # Persistent Storage
+import re # Strict Input Sanitation
+import random # For OTP Generation
+import smtplib # For Sending Email OTP
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from werkzeug.security import generate_password_hash, check_password_hash 
+from werkzeug.security import generate_password_hash, check_password_hash # Secure Hashing
 from flask import Flask, render_template, request, jsonify, make_response, url_for, session, redirect
 
+# PDF Libraries
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+
+# INITIALIZE FLASK WITH STATIC FOLDER SUPPORT
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.secret_key = "BCET_BLOCKCHAIN_2026_SECURE_ULTRA_PRO_MAX_Z_PLUS_DEEPCORE_IMMUTABLE_HARSH"
 
+# --- CONFIGURATION ---
 IST = pytz.timezone('Asia/Kolkata')
 ADMIN_SECRET = "BCET_ADMIN_PRO" 
 
+# --- PRODUCTION MAIL ENGINE INITIALIZATION ---
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 SENDER_EMAIL = "beharacollegeofengineering@gmail.com"
 SENDER_PASSWORD = "kgocjaossnrptfpp"
 
+# --- VOLATILE OTP MEMORY MATRIX ---
 SIGNUP_OTP_CACHE = {}  
 FORGOT_OTP_CACHE = {}  
 
+# --- ADVANCED SECURITY MEMORY MATRIX ---
 FAILED_ATTEMPTS = {} 
 MAX_FAILED_ATTEMPTS = 5
 RATE_LIMIT_TRACKER = {} 
 RATE_LIMIT_WINDOW = 10 
 MAX_REQUESTS_PER_WINDOW = 20 
-SYSTEM_FORENSIC_LOCKOUT = False 
+SYSTEM_FORENSIC_LOCKOUT = False # Critical Anti-Hacking Killswitch
 
+# --- AUTHORIZED STUDENT LIST Matrix ---
 AUTHORIZED_STUDENTS = [
     "24V11A0501", "24V11A0502", "24V11A0503", "24V11A0504", "24V11A0505",
     "24V11A0506", "24V11A0507", "24V11A0510", "24V11A0511", "24V11A0512",
@@ -77,6 +88,7 @@ ELECTION_SETTINGS = {
     "admin_secret": ADMIN_SECRET
 }
 
+# --- SECURE SMTP ENGINE DISPATCHER ---
 def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
     try:
         msg = MIMEMultipart()
@@ -95,6 +107,7 @@ def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
         print(f"SMTP Core Operational Error Alert: {e}")
         return False
 
+# --- LIGHTWEIGHT TRI-NODE MULTI-CONSENSUS BLOCKCHAIN CORE ---
 class CryptographicNode:
     def __init__(self, node_id):
         self.node_id = node_id
@@ -203,6 +216,8 @@ def intercept_rate_limits():
         consensus_blockchain.log_intrusion("ANTI_DDOS_GATE", "Rate Limit Violation / Network Attack Blocked", client_ip)
         return "<h1>429 Too Many Requests. Anti-DDoS Lock Activated.</h1>", 429
     RATE_LIMIT_TRACKER[client_ip].append(current_time)
+
+# --- ROUTES ---
 
 @app.route('/welcome')
 def welcome():
@@ -540,7 +555,7 @@ def execute_node_flush():
     conn.close()
     return jsonify({"status": "success", "message": f"Database settings scrubbed for Student [{target_id}]. Safe for new sign-up execution."})
 
-# FIXED ARGS SPECIFICATION FOR ENTIRE REMOVAL OF 500 ERROR ON THE AUDIT LAYOUT VIEW
+# FIXED: Returns secret context variables to explicitly prevent 500 render errors
 @app.route('/admin/security-audit/<secret>')
 def dynamic_security_audit_view(secret):
     if secret != ADMIN_SECRET:
