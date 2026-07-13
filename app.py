@@ -1,13 +1,14 @@
 import hashlib
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 from io import BytesIO
 import sqlite3 # Persistent Storage
 import re # Strict Input Sanitation
 import random # For OTP Generation
 import smtplib # For Sending Email OTP
+import ssl # For Secure SMTP SSL Handshake
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from werkzeug.security import generate_password_hash, check_password_hash # Secure Hashing
@@ -20,7 +21,9 @@ from reportlab.lib import colors
 
 # INITIALIZE FLASK WITH STATIC FOLDER SUPPORT
 app = Flask(__name__, static_url_path='/static', static_folder='static')
+# FIXED: Session permanence configuration for the continuous 7-day window
 app.secret_key = "BCET_BLOCKCHAIN_2026_SECURE_ULTRA_PRO_MAX_Z_PLUS_DEEPCORE_IMMUTABLE_HARSH"
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 # --- CONFIGURATION ---
 IST = pytz.timezone('Asia/Kolkata')
@@ -28,7 +31,6 @@ ADMIN_SECRET = "BCET_ADMIN_PRO"
 
 # --- PRODUCTION MAIL ENGINE INITIALIZATION ---
 SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
 SENDER_EMAIL = "beharacollegeofengineering@gmail.com"
 SENDER_PASSWORD = "eiqi zqts lweq ruf"
 
@@ -88,6 +90,7 @@ ELECTION_SETTINGS = {
     "admin_secret": ADMIN_SECRET
 }
 
+# --- FIXED: Secure Email Engine utilizing SSL Port 465 to bypass Render outbound blocks ---
 def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
     try:
         msg = MIMEMultipart()
@@ -96,14 +99,15 @@ def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
         msg['Subject'] = f"Secure Gatekeeper - OTP for {purpose}"
         body = f"Hello Student,\n\nYour 6-Digit One-Time Password (OTP) for BCET Voting System {purpose} is: {otp_code}\n\nThis code is valid for 5 minutes only.\n\nRegards,\nBCET Blockchain Core Engine"
         msg.attach(MIMEText(body, 'plain'))
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
+        
+        context = ssl.create_default_context()
+        server = smtplib.SMTP_SSL(SMTP_SERVER, 465, context=context)
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
         server.sendmail(SENDER_EMAIL, target_email, msg.as_string())
         server.quit()
         return True
     except Exception as e:
-        print(f"SMTP Core Operational Error Alert: {e}")
+        print(f"SMTP Secure SSL Port 465 Error Alert: {e}")
         return False
 
 class CryptographicNode:
@@ -361,6 +365,8 @@ def login():
 
     if user and check_password_hash(user[0], password):
         FAILED_ATTEMPTS[client_ip] = 0 
+        # FIXED: Forces browser session state persistence across the 7-day window
+        session.permanent = True
         session['user_id'] = student_id
         session['user_ip'] = client_ip 
         session['token_verified'] = False
