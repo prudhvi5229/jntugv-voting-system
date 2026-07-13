@@ -129,7 +129,6 @@
             margin-bottom: 24px;
         }
 
-        /* SIDEBAR CONTAINER EXTENSION RULES */
         .right-security-sidebar {
             width: 100%;
             background: var(--card-bg);
@@ -346,10 +345,11 @@
             <span></span>
             <span></span>
         </div>
+        <!-- FIXED: Appended Cache-Busting Tokens explicitly to force clean loads -->
         <div class="burger-dropdown-content" id="burgerMenuDropdownContainer">
             <a href="/">🏠 Home Dashboard</a>
-            <a href="/admin/security-audit/{{ settings.admin_secret }}">🛡️ Security Core Audit Page</a>
-            <a href="/admin/factory-reset/{{ settings.admin_secret }}">⚙️ Voter Node Factory Reset</a>
+            <a href="/admin/security-audit/{{ settings.admin_secret }}?v=2026">🛡️ Security Core Audit Page</a>
+            <a href="/admin/factory-reset/{{ settings.admin_secret }}?v=2026">⚙️ Voter Node Factory Reset</a>
         </div>
     </div>
     <button class="theme-toggle-btn" onclick="toggleSystemTheme()">🌓 Toggle Theme</button>
@@ -425,7 +425,6 @@
         </div>
     </div>
 
-    <!-- RIGHT SIDEBAR (FIXED: Accordion removed completely as requested in Pic 2) -->
     <div class="right-security-sidebar">
         <div class="sidebar-header">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -440,7 +439,7 @@
         <div style="border: 2px dashed #10b981; border-radius: 12px; padding: 16px; background: rgba(16, 185, 129, 0.02); box-sizing: border-box;">
             <h4 style="margin: 0 0 8px 0; color: #10b981; font-weight: 800; font-size: 0.9rem;">⚙️ Whitelist Node Control</h4>
             <p style="margin: 0 0 14px 0; font-size: 0.75rem; color: var(--text-sub); line-height: 1.4;">Open the full screen manager node page to copy, paste, add or remove authorized student hall tickets.</p>
-            <a href="/admin/voter-registry/{{ settings.admin_secret }}" class="btn" style="background: var(--btn-success); font-size: 0.75rem; padding: 8px 14px; text-decoration: none; display: inline-block;">
+            <a href="/admin/voter-registry/{{ settings.admin_secret }}?v=2026" class="btn" style="background: var(--btn-success); font-size: 0.75rem; padding: 8px 14px; text-decoration: none; display: inline-block;">
                 Open Voter Registry Control Page
             </a>
         </div>
@@ -549,7 +548,6 @@
         };
     }
 
-    // REST OF JavaScript ALIGNMENTS 100% PRESERVED
     function processManifestoMediaUpload(input, index) {
         const file = input.files[0];
         if (!file) return;

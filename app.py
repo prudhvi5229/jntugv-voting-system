@@ -88,7 +88,6 @@ ELECTION_SETTINGS = {
     "admin_secret": ADMIN_SECRET
 }
 
-# --- SECURE SMTP ENGINE DISPATCHER ---
 def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
     try:
         msg = MIMEMultipart()
@@ -107,7 +106,6 @@ def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
         print(f"SMTP Core Operational Error Alert: {e}")
         return False
 
-# --- LIGHTWEIGHT TRI-NODE MULTI-CONSENSUS BLOCKCHAIN CORE ---
 class CryptographicNode:
     def __init__(self, node_id):
         self.node_id = node_id
@@ -526,16 +524,16 @@ def add_student_live():
     new_id = sanitize_input(request.form.get('student_id', '')).upper()
     if new_id and new_id not in AUTHORIZED_STUDENTS:
         AUTHORIZED_STUDENTS.append(new_id)
-        return jsonify({"status": "success", "message": f"Student Node [{new_id}] injected into authorization Whitelist!"})
-    return jsonify({"status": "error", "message": "ID already exists or structural parameter invalid!"})
+        return jsonify({"status": "success", "message": f"Student Node [{new_id}] injected into Whitelist!"})
+    return jsonify({"status": "error", "message": "ID already exists or parameter invalid!"})
 
 @app.route('/admin/delete_student_live', methods=['POST'])
 def delete_student_live():
     target_id = sanitize_input(request.form.get('student_id', '')).upper()
     if target_id in AUTHORIZED_STUDENTS:
         AUTHORIZED_STUDENTS.remove(target_id)
-        return jsonify({"status": "success", "message": f"Voter Node [{target_id}] removed from Whitelist configurations."})
-    return jsonify({"status": "error", "message": "Target identification parameter mapping resolution error."})
+        return jsonify({"status": "success", "message": f"Voter Node [{target_id}] removed from Whitelist."})
+    return jsonify({"status": "error", "message": "Target parsing mapping resolution error."})
 
 @app.route('/admin/factory-reset/<secret>')
 def dynamic_factory_reset_view(secret):
@@ -547,15 +545,14 @@ def dynamic_factory_reset_view(secret):
 def execute_node_flush():
     target_id = sanitize_input(request.form.get('student_id', '')).upper()
     if not target_id:
-        return jsonify({"status": "error", "message": "Empty reference framework parameters tracker."})
+        return jsonify({"status": "error", "message": "Empty framework reference tracker."})
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
     cursor.execute("DELETE FROM users WHERE student_id=?", (target_id,))
     conn.commit()
     conn.close()
-    return jsonify({"status": "success", "message": f"Database settings scrubbed for Student [{target_id}]. Safe for new sign-up execution."})
+    return jsonify({"status": "success", "message": f"Database scrubbed for Student [{target_id}]. Safe for new signup."})
 
-# FIXED: Returns secret context variables to explicitly prevent 500 render errors
 @app.route('/admin/security-audit/<secret>')
 def dynamic_security_audit_view(secret):
     if secret != ADMIN_SECRET:
