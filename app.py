@@ -30,7 +30,7 @@ ADMIN_SECRET = "BCET_ADMIN_PRO"
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 SENDER_EMAIL = "beharacollegeofengineering@gmail.com"
-SENDER_PASSWORD = "kgocjaossnrptfpp"
+SENDER_PASSWORD = "eiqi zqts lweq ruf"
 
 # --- VOLATILE OTP MEMORY MATRIX ---
 SIGNUP_OTP_CACHE = {}  
