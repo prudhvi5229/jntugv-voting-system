@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BCET Security Audit | Cryptographic Compliance</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-sub: #475569;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --primary-color: #10b981;
+        }
+        [data-theme="dark"] {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.08);
+        }
+        body {
+            margin: 0; padding: 40px 20px;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 { margin: 0 0 10px 0; font-size: 1.8rem; font-weight: 800; color: var(--primary-color); text-align: center; }
+        .subtitle { font-size: 0.85rem; color: var(--text-sub); text-align: center; margin-bottom: 30px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+        
+        .audit-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+        .audit-card {
+            background: rgba(0,0,0,0.02);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 14px;
+        }
+        [data-theme="dark"] .audit-card { background: rgba(255,255,255,0.02); }
+        .audit-card h3 { margin: 0 0 8px 0; font-size: 1rem; color: #3b82f6; font-weight: 700; }
+        .audit-card p { margin: 0; font-size: 0.85rem; color: var(--text-sub); line-height: 1.5; }
+        
+        .btn-back {
+            display: inline-block;
+            padding: 12px 24px;
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Security Core Audit Ledger</h1>
+    <div class="subtitle">Active Cryptographic Security Framework Compliance Matrix</div>
+    
+    <div class="audit-list">
+        <div class="audit-card">
+            <h3>🔒 Tri-Node Consensus Engine</h3>
+            <p>Ballot transactions are cross-checked and verified across three independent, synchronized database instances synchronously to prevent block mutability attacks.</p>
+        </div>
+        <div class="audit-card">
+            <h3>🔒 Salty Ballot Obfuscation</h3>
+            <p>Candidate choices are transformed into secure SHA-256 hashes utilizing dynamic salts prior to ledger insertion, rendering anonymous choices non-reversible.</p>
+        </div>
+        <div class="audit-card">
+            <h3>🔒 Zero-Knowledge Token Binding</h3>
+            <p>Voter auth tokens are bound directly to user IP footprints and active browser state metadata to prevent unauthorized third-party packet sniffing or replay attempts.</p>
+        </div>
+        <div class="audit-card">
+            <h3>🔒 Forensic Intrusion Lockout</h3>
+            <p>Automated deep-inspection loops scan node integrity constantly. Detection of external database file manipulation immediately fires a system-wide freeze switch.</p>
+        </div>
+    </div>
+
+    <div style="text-align: center;">
+        <a href="javascript:history.back()" class="btn-back">← Abort and Return to Dashboard</a>
+    </div>
+</div>
+</body>
+</html>
