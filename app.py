@@ -7,10 +7,7 @@ from io import BytesIO
 import sqlite3 # Persistent Storage
 import re # Strict Input Sanitation
 import random # For OTP Generation
-import smtplib # For Sending Email OTP
-import ssl # For Secure SMTP SSL Handshake
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import requests # Used for Resend HTTP API calls to bypass Render SMTP blocks
 from werkzeug.security import generate_password_hash, check_password_hash # Secure Hashing
 from flask import Flask, render_template, request, jsonify, make_response, url_for, session, redirect
 
@@ -29,10 +26,10 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 IST = pytz.timezone('Asia/Kolkata')
 ADMIN_SECRET = "BCET_ADMIN_PRO" 
 
-# --- PRODUCTION MAIL ENGINE INITIALIZATION ---
-SMTP_SERVER = "smtp.gmail.com"
-SENDER_EMAIL = "beharacollegeofengineering@gmail.com"
-SENDER_PASSWORD = "eiqi zqts lweq ruf"
+# --- PRODUCTION RESEND API CONFIGURATION ---
+# FIXED: Integrated your active Resend API secret token securely
+RESEND_API_KEY = "re_LP3esKc4_QL2iupoPzxxnwznc2cADtYNZ"
+SENDER_EMAIL = "onboarding@resend.dev" # Free tier default secure sender domain
 
 # --- VOLATILE OTP MEMORY MATRIX ---
 SIGNUP_OTP_CACHE = {}  
@@ -90,24 +87,27 @@ ELECTION_SETTINGS = {
     "admin_secret": ADMIN_SECRET
 }
 
-# --- FIXED: Secure Email Engine utilizing SSL Port 465 to bypass Render outbound blocks ---
+# --- FIXED: HTTPS API-based Mail Engine to completely bypass Render Port Locks ---
 def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
     try:
-        msg = MIMEMultipart()
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = target_email
-        msg['Subject'] = f"Secure Gatekeeper - OTP for {purpose}"
-        body = f"Hello Student,\n\nYour 6-Digit One-Time Password (OTP) for BCET Voting System {purpose} is: {otp_code}\n\nThis code is valid for 5 minutes only.\n\nRegards,\nBCET Blockchain Core Engine"
-        msg.attach(MIMEText(body, 'plain'))
-        
-        context = ssl.create_default_context()
-        server = smtplib.SMTP_SSL(SMTP_SERVER, 465, context=context)
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        server.sendmail(SENDER_EMAIL, target_email, msg.as_string())
-        server.quit()
-        return True
+        url = "https://api.resend.com/emails"
+        headers = {
+            "Authorization": f"Bearer {RESEND_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "from": f"BCET Gatekeeper <{SENDER_EMAIL}>",
+            "to": [target_email],
+            "subject": f"Secure Gatekeeper - OTP for {purpose}",
+            "text": f"Hello Student,\n\nYour 6-Digit One-Time Password (OTP) for BCET Voting System {purpose} is: {otp_code}\n\nThis code is valid for 5 minutes only.\n\nRegards,\nBCET Blockchain Core Engine"
+        }
+        response = requests.post(url, headers=headers, json=payload)
+        if response.status_code in [200, 201]:
+            return True
+        print(f"Resend API Error Matrix: {response.text}")
+        return False
     except Exception as e:
-        print(f"SMTP Secure SSL Port 465 Error Alert: {e}")
+        print(f"Resend HTTP Engine Exception Alert: {e}")
         return False
 
 class CryptographicNode:
