@@ -7,9 +7,7 @@ from io import BytesIO
 import sqlite3 # Persistent Storage
 import re # Strict Input Sanitation
 import random # For OTP Generation
-import smtplib # Native SMTP for Gmail
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import requests # Using HTTP Requests to completely bypass Render network/SMTP blocks
 import numpy as np # For numerical processing of Face Vectors from Android Engine
 from werkzeug.security import generate_password_hash, check_password_hash # Secure Hashing
 from flask import Flask, render_template, request, jsonify, make_response, url_for, session, redirect
@@ -28,9 +26,9 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 IST = pytz.timezone('Asia/Kolkata')
 ADMIN_SECRET = "BCET_ADMIN_PRO" 
 
-# --- PRODUCTION GMAIL SMTP CONFIGURATION ---
-GMAIL_USER = "beharacollegeofengineering@gmail.com"
-GMAIL_APP_PASSWORD = "cwfisjbcctwisnrx"
+# --- PRODUCTION BREVO HTTP API CONFIGURATION ---
+BREVO_API_KEY = "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" 
+SENDER_EMAIL = "beharacollegeofengineering@gmail.com"
 
 # --- VOLATILE OTP MEMORY MATRIX ---
 SIGNUP_OTP_CACHE = {}  
@@ -94,22 +92,26 @@ ELECTION_SETTINGS = {
 
 def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
     try:
-        msg = MIMEMultipart()
-        msg['From'] = f"BCET Gatekeeper <{GMAIL_USER}>"
-        msg['To'] = target_email
-        msg['Subject'] = f"Secure Gatekeeper - OTP for {purpose}"
+        url = "https://api.brevo.com/v3/smtp/email"
+        headers = {
+            "accept": "application/json",
+            "api-key": BREVO_API_KEY,
+            "content-type": "application/json"
+        }
+        payload = {
+            "sender": {"name": "BCET Gatekeeper", "email": SENDER_EMAIL},
+            "to": [{"email": target_email}],
+            "subject": f"Secure Gatekeeper - OTP for {purpose}",
+            "textContent": f"Hello Student,\n\nYour 6-Digit One-Time Password (OTP) for BCET Voting System {purpose} is: {otp_code}\n\nThis code is valid for 5 minutes only.\n\nRegards,\nBCET Blockchain Core Engine"
+        }
         
-        body = f"Hello Student,\n\nYour 6-Digit One-Time Password (OTP) for BCET Voting System {purpose} is: {otp_code}\n\nThis code is valid for 5 minutes only.\n\nRegards,\nBCET Blockchain Core Engine"
-        msg.attach(MIMEText(body, 'plain'))
-        
-        # Using secure SMTP_SSL over Port 465 to bypass cloud network blocks
-        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-        server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
-        server.sendmail(GMAIL_USER, target_email, msg.as_string())
-        server.quit()
-        return True
+        response = requests.post(url, headers=headers, json=payload)
+        if response.status_code in [200, 201, 202]:
+            return True
+        print(f"Brevo API Error Response: {response.text}")
+        return False
     except Exception as e:
-        print(f"SMTP Error Logged: {e}")
+        print(f"Network Transmission API Error: {e}")
         return False
 
 # --- TRI-NODE CRYPTOGRAPHIC BLOCKCHAIN ENGINE ---
