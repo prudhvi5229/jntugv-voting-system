@@ -102,8 +102,8 @@ def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
         body = f"Hello Student,\n\nYour 6-Digit One-Time Password (OTP) for BCET Voting System {purpose} is: {otp_code}\n\nThis code is valid for 5 minutes only.\n\nRegards,\nBCET Blockchain Core Engine"
         msg.attach(MIMEText(body, 'plain'))
         
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()  
+        # Using secure SMTP_SSL over Port 465 to bypass cloud network blocks
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
         server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
         server.sendmail(GMAIL_USER, target_email, msg.as_string())
         server.quit()
