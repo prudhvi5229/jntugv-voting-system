@@ -329,7 +329,7 @@ def api_verify_app_token():
         consensus_blockchain.log_intrusion(student_id, "App Token Mismatch", get_client_ip())
         return jsonify({"status": "error", "message": "FAILED: Token mismatch configuration!"}), 403
 
-# --- ORIGINAL WEB PORTAL ROUTES (Kept Exactly Untouched) ---
+# --- ORIGINAL WEB PORTAL ROUTES ---
 
 @app.route('/welcome')
 def welcome():
@@ -355,8 +355,19 @@ def index():
         return redirect(url_for('auth_token_display'))
 
     now = datetime.now(IST)
-    start = datetime.strptime(ELECTION_SETTINGS["start_time"], "%Y-%m-%dT%H:%M").replace(tzinfo=IST)
-    end = datetime.strptime(ELECTION_SETTINGS["end_time"], "%Y-%m-%dT%H:%M").replace(tzinfo=IST)
+    
+    # --- Advanced Time Format Fallback Detection ---
+    def parse_election_time(time_str):
+        if "-" not in time_str:
+            return datetime.strptime(time_str, "%Y%m%dT%H:%M").replace(tzinfo=IST)
+        return datetime.strptime(time_str, "%Y-%m-%dT%H:%M").replace(tzinfo=IST)
+
+    try:
+        start = parse_election_time(ELECTION_SETTINGS["start_time"])
+        end = parse_election_time(ELECTION_SETTINGS["end_time"])
+    except Exception:
+        start = now - timedelta(days=1)
+        end = now + timedelta(days=1)
     
     status = "OPEN"
     if not ELECTION_SETTINGS["is_active"] or now > end:
