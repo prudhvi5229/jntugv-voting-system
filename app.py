@@ -7,7 +7,9 @@ from io import BytesIO
 import sqlite3 # Persistent Storage
 import re # Strict Input Sanitation
 import random # For OTP Generation
-import requests # Used for Resend HTTP API calls to bypass Render SMTP blocks
+import smtplib # Native SMTP for Gmail
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import numpy as np # For numerical processing of Face Vectors from Android Engine
 from werkzeug.security import generate_password_hash, check_password_hash # Secure Hashing
 from flask import Flask, render_template, request, jsonify, make_response, url_for, session, redirect
@@ -26,9 +28,9 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 IST = pytz.timezone('Asia/Kolkata')
 ADMIN_SECRET = "BCET_ADMIN_PRO" 
 
-# --- PRODUCTION RESEND API CONFIGURATION ---
-RESEND_API_KEY = "re_LP3esKc4_QL2iupoPzxxnwznc2cADtYNZ"
-SENDER_EMAIL = "onboarding@resend.dev" 
+# --- PRODUCTION GMAIL SMTP CONFIGURATION ---
+GMAIL_USER = "beharacollegeofengineering@gmail.com"
+GMAIL_APP_PASSWORD = "cwfisjbcctwisnrx"
 
 # --- VOLATILE OTP MEMORY MATRIX ---
 SIGNUP_OTP_CACHE = {}  
@@ -65,10 +67,10 @@ AUTHORIZED_STUDENTS = [
 def init_db():
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
-    # Web Auth Table (Your original web logic database remains fully intact)
+    # Web Auth Table 
     cursor.execute('''CREATE TABLE IF NOT EXISTS users 
                       (student_id TEXT PRIMARY KEY, email TEXT, password_hash TEXT)''')
-    # Android Biometric Matrix Table (For roll number mapping without passwords/emails)
+    # Android Biometric Matrix Table
     cursor.execute('''CREATE TABLE IF NOT EXISTS android_biometrics 
                       (student_id TEXT PRIMARY KEY, fingerprint_data TEXT, face_vector TEXT)''')
     conn.commit()
@@ -92,25 +94,25 @@ ELECTION_SETTINGS = {
 
 def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
     try:
-        url = "https://api.resend.com/emails"
-        headers = {
-            "Authorization": f"Bearer {RESEND_API_KEY}",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "from": f"BCET Gatekeeper <{SENDER_EMAIL}>",
-            "to": [target_email],
-            "subject": f"Secure Gatekeeper - OTP for {purpose}",
-            "text": f"Hello Student,\n\nYour 6-Digit One-Time Password (OTP) for BCET Voting System {purpose} is: {otp_code}\n\nThis code is valid for 5 minutes only.\n\nRegards,\nBCET Blockchain Core Engine"
-        }
-        response = requests.post(url, headers=headers, json=payload)
-        if response.status_code in [200, 201]:
-            return True
-        return False
-    except Exception:
+        msg = MIMEMultipart()
+        msg['From'] = f"BCET Gatekeeper <{GMAIL_USER}>"
+        msg['To'] = target_email
+        msg['Subject'] = f"Secure Gatekeeper - OTP for {purpose}"
+        
+        body = f"Hello Student,\n\nYour 6-Digit One-Time Password (OTP) for BCET Voting System {purpose} is: {otp_code}\n\nThis code is valid for 5 minutes only.\n\nRegards,\nBCET Blockchain Core Engine"
+        msg.attach(MIMEText(body, 'plain'))
+        
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()  
+        server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+        server.sendmail(GMAIL_USER, target_email, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"SMTP Error Logged: {e}")
         return False
 
-# --- TRI-NODE CRYPTOGRAPHIC BLOCKCHAIN ENGINE (Untouched) ---
+# --- TRI-NODE CRYPTOGRAPHIC BLOCKCHAIN ENGINE ---
 class CryptographicNode:
     def __init__(self, node_id):
         self.node_id = node_id
@@ -263,7 +265,6 @@ def api_admin_upload_biometrics():
 
 @app.route('/api/biometric_login', methods=['POST'])
 def api_biometric_login():
-    """APP BIOMETRIC 'OR' LOGIC GATEWAY"""
     data = request.json
     student_id = sanitize_input(data.get('student_id', '')).upper()
     live_fingerprint = data.get('live_fingerprint', None)
@@ -306,7 +307,6 @@ def api_biometric_login():
 
 @app.route('/api/verify_app_token', methods=['POST'])
 def api_verify_app_token():
-    """Validates token copy-paste on App verification page and bridges to Web Session"""
     data = request.json
     student_id = sanitize_input(data.get('student_id', '')).upper()
     user_input_token = sanitize_input(data.get('input_token', '')).upper()
@@ -318,7 +318,7 @@ def api_verify_app_token():
         session['app_verified'] = True
         session['user_id'] = student_id
         session['user_ip'] = get_client_ip()
-        session['token_verified'] = True # Bypasses web login OTP check entirely
+        session['token_verified'] = True 
         
         return jsonify({
             "status": "success",
@@ -442,7 +442,7 @@ def send_signup_otp():
 
     if send_secure_otp_email(email, otp, "Account Registration Gate"):
         return jsonify({"status": "success", "message": "Verification OTP sent to your email!"})
-    return jsonify({"status": "error", "message": "Email Relay Failed. Check App Configurations."})
+    return jsonify({"status": "error", "message": "Email Configuration Relay Failure."})
 
 @app.route('/verify_signup_otp', methods=['POST'])
 def verify_signup_otp():
