@@ -551,12 +551,15 @@
     }
 
     {% if election_status == "OPEN" %}
-    const targetDate = new Date("{{ settings.end_time }}").getTime();
+    // 🔥 ISO స్ట్రింగ్‌లోని 'T' ని స్పేస్‌గా, హైఫన్లను స్లాష్‌లుగా మార్చి బ్రౌజర్లన్నింటిలో NaN రాకుండా ఫిక్స్ చేయబడింది
+    const endTimeString = "{{ settings.end_time }}".replace('T', ' ').replace(/-/g, '/');
+    const targetDate = new Date(endTimeString).getTime();
+
     function updateCountdown() {
         const now = new Date().getTime();
         const difference = targetDate - now;
         
-        if (difference <= 0) {
+        if (isNaN(difference) || difference <= 0) {
             document.getElementById("countdown-wrapper").innerHTML = "<span class='time-block-box' style='color:#ef4444; width:100%'>CLOSED</span>";
             return;
         }

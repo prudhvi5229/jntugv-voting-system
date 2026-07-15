@@ -28,7 +28,6 @@ IST = pytz.timezone('Asia/Kolkata')
 ADMIN_SECRET = "BCET_ADMIN_PRO" 
 
 # --- PRODUCTION BREVO HTTP API CONFIGURATION ---
-# Safely parsing the token through Environment Variables to bypass GitHub Push Declined errors
 BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "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") 
 SENDER_EMAIL = "beharacollegeofengineering@gmail.com"
 
@@ -44,8 +43,8 @@ RATE_LIMIT_WINDOW = 10
 MAX_REQUESTS_PER_WINDOW = 20 
 SYSTEM_FORENSIC_LOCKOUT = False # Critical Anti-Hacking Killswitch
 
-# --- AUTHORIZED STUDENT LIST Matrix ---
-AUTHORIZED_STUDENTS = [
+# --- AUTHORIZED STUDENT MATRIX SOURCE (MIGRATED TO DB ON INITIALIZATION) ---
+INITIAL_WHITELIST_SOURCE = [
     "24V11A0501", "24V11A0502", "24V11A0503", "24V11A0504", "24V11A0505",
     "24V11A0506", "24V11A0507", "24V11A0510", "24V11A0511", "24V11A0512",
     "24V11A0513", "24V11A0514", "24V11A0515", "24V11A0516", "24V11A0517",
@@ -73,6 +72,16 @@ def init_db():
     # Android Biometric Matrix Table
     cursor.execute('''CREATE TABLE IF NOT EXISTS android_biometrics 
                       (student_id TEXT PRIMARY KEY, fingerprint_data TEXT, face_vector TEXT)''')
+    # 🔥 DYNAMIC WHITELIST TABLE WITH EMAIL MAPPING
+    cursor.execute('''CREATE TABLE IF NOT EXISTS whitelist_registry 
+                      (student_id TEXT PRIMARY KEY, email TEXT)''')
+    
+    # మీ పాత హార్డ్‌కోడెడ్ లిస్ట్ మొత్తాన్ని ఆటోమేటిక్‌గా డేటాబేస్ లోకి డైనమిక్ గా మ్యాప్ చేయడం
+    for sid in INITIAL_WHITELIST_SOURCE:
+        # డెమో ఈమెయిల్ ఫార్మాట్ (మీ టెస్టింగ్ ఐడీ 24V11A0522 కి మీ పర్సనల్ మెయిల్ బైండ్ అవుతుంది)
+        resolved_email = "prudhvi5229@gmail.com" if sid == "24V11A0522" else f"student_{sid.lower()}@bcet.in"
+        cursor.execute("INSERT OR IGNORE INTO whitelist_registry VALUES (?, ?)", (sid, resolved_email))
+        
     conn.commit()
     conn.close()
 
@@ -91,6 +100,20 @@ ELECTION_SETTINGS = {
     "range_end": 580,
     "admin_secret": ADMIN_SECRET
 }
+
+def mask_email(email_str):
+    """ఈమెయిల్ ప్రైవసీ కోసం స్క్రీన్ మీద pr******@gmail.com లాగా మారుస్తుంది"""
+    try:
+        parts = email_str.split('@')
+        name = parts[0]
+        domain = parts[1]
+        if len(name) <= 2:
+            masked_name = name + "**"
+        else:
+            masked_name = name[:2] + "**" + name[-1]
+        return f"{masked_name}@{domain}"
+    except Exception:
+        return "your registered email"
 
 def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
     try:
@@ -243,7 +266,7 @@ def intercept_rate_limits():
         return "<h1>429 Too Many Requests.</h1>", 429
     RATE_LIMIT_TRACKER[client_ip].append(current_time)
 
-# --- NEW ANDROID APP INTEGRATION ENDPOINTS ---
+# --- ANDROID APP INTEGRATION ENDPOINTS ---
 
 @app.route('/api/admin/upload_biometrics', methods=['POST'])
 def api_admin_upload_biometrics():
@@ -254,14 +277,22 @@ def api_admin_upload_biometrics():
     student_id = sanitize_input(data.get('student_id', '')).upper()
     fingerprint_raw = data.get('fingerprint_data', None)
     face_vector_raw = data.get('face_vector', None)
-    if student_id not in AUTHORIZED_STUDENTS:
-        return jsonify({"status": "error", "message": "ID not in whitelist!"}), 400
+    
+    # Check Whitelist validation from DB instead of old list
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
+    cursor.execute("SELECT student_id FROM whitelist_registry WHERE student_id=?", (student_id,))
+    whitelisted = cursor.fetchone()
+    
+    if not whitelisted:
+        conn.close()
+        return jsonify({"status": "error", "message": "ID not in whitelist database!"}), 400
+        
     face_vector_str = json.dumps(face_vector_raw) if face_vector_raw else None
     try:
         cursor.execute("INSERT OR REPLACE INTO android_biometrics VALUES (?, ?, ?)", (student_id, fingerprint_raw, face_vector_str))
         conn.commit()
+        conn.close()
         return jsonify({"status": "success", "message": "Biometrics mapped successfully!"})
     except sqlite3.Error as e:
         conn.close()
@@ -275,12 +306,16 @@ def api_biometric_login():
     live_face_vector = data.get('live_face_vector', None)
     client_ip = get_client_ip()
 
-    if student_id not in AUTHORIZED_STUDENTS:
+    conn = sqlite3.connect('bcet_production.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT student_id FROM whitelist_registry WHERE student_id=?", (student_id,))
+    whitelisted = cursor.fetchone()
+
+    if not whitelisted:
+        conn.close()
         consensus_blockchain.log_intrusion(student_id, "Non-Whitelist ID Attempt", client_ip)
         return jsonify({"status": "error", "message": "FAILED: Student ID is not authorized!"}), 401
 
-    conn = sqlite3.connect('bcet_production.db')
-    cursor = conn.cursor()
     cursor.execute("SELECT fingerprint_data, face_vector FROM android_biometrics WHERE student_id=?", (student_id,))
     row = cursor.fetchone()
     conn.close()
@@ -333,7 +368,7 @@ def api_verify_app_token():
         consensus_blockchain.log_intrusion(student_id, "App Token Mismatch", get_client_ip())
         return jsonify({"status": "error", "message": "FAILED: Token mismatch configuration!"}), 403
 
-# --- ORIGINAL WEB PORTAL ROUTES ---
+# --- WEB PORTAL ROUTES ---
 
 @app.route('/welcome')
 def welcome():
@@ -360,7 +395,6 @@ def index():
 
     now = datetime.now(IST)
     
-    # --- Advanced Time Format Fallback Detection ---
     def parse_election_time(time_str):
         if "-" not in time_str:
             return datetime.strptime(time_str, "%Y%m%dT%H:%M").replace(tzinfo=IST)
@@ -420,32 +454,47 @@ def verify_token():
 def signup_page():
     return render_template('signup.html')
 
+# 🔥 FULLY UPDATED: DATA-DRIVEN WHITELIST SIGN-UP ROUTE WITH AUTO-EMAIL TRANSMISSION
 @app.route('/send_signup_otp', methods=['POST'])
 def send_signup_otp():
     student_id = sanitize_input(request.form.get('student_id', '')).upper()
-    email = sanitize_input(request.form.get('email', '')).lower()
     password = request.form.get('password', '').strip()
 
-    if student_id not in AUTHORIZED_STUDENTS:
-        consensus_blockchain.log_intrusion(student_id, "Non-Authorized Whitelist Sign-up Intrusion Attempt", get_client_ip())
-        return jsonify({"status": "error", "message": "ID not authorized by BCET Whitelist!"})
-
+    # 1. డేటాబేస్ వైట్‌లిస్ట్ నుండి ఈమెయిల్ ఐడీని ఆటోమేటిక్‌గా తీసుకోవడం
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
+    cursor.execute("SELECT email FROM whitelist_registry WHERE student_id=?", (student_id,))
+    row = cursor.fetchone()
+    
+    if not row:
+        conn.close()
+        consensus_blockchain.log_intrusion(student_id, "Non-Whitelisted Database Intrusion Attempt", get_client_ip())
+        return jsonify({"status": "error", "message": "ID not authorized by BCET Database Registry!"})
+    
+    registered_email = row[0]
+
+    # 2. ఆల్రెడీ అకౌంట్ ఉందో లేదో చెక్ చేయడం
     cursor.execute("SELECT student_id FROM users WHERE student_id=?", (student_id,))
     if cursor.fetchone():
         conn.close()
         return jsonify({"status": "error", "message": "Already registered! Log in directly."})
     conn.close()
 
+    # 3. OTP జనరేట్ చేసి మెమరీలో స్టోర్ చేయడం
     otp = str(random.randint(100021, 999989))
     SIGNUP_OTP_CACHE[student_id] = {
-        "otp": otp, "email": email, "password_hash": generate_password_hash(password),
+        "otp": otp, "email": registered_email, "password_hash": generate_password_hash(password),
         "expires": time.time() + 300
     }
 
-    if send_secure_otp_email(email, otp, "Account Registration Gate"):
-        return jsonify({"status": "success", "message": "Verification OTP sent to your email!"})
+    # 4. ఈమెయిల్ మాస్క్ చేసి ప్రైవసీ అలర్ట్‌గా పంపడం
+    display_masked_email = mask_email(registered_email)
+
+    if send_secure_otp_email(registered_email, otp, "Account Registration Gate"):
+        return jsonify({
+            "status": "success", 
+            "message": f"Verification OTP sent to your registered email: {display_masked_email}"
+        })
     return jsonify({"status": "error", "message": "Email Configuration Relay Failure."})
 
 @app.route('/verify_signup_otp', methods=['POST'])
@@ -610,26 +659,50 @@ def admin_results():
         vote_counts[c['name']] = "🔴 LOCKOUT ACTIVE" if tally == -999 else tally
     return render_template('results.html', settings=ELECTION_SETTINGS, vote_counts=vote_counts, logs=consensus_blockchain.security_logs)
 
+# 🔥 FULLY UPDATED: DYNAMIC LIVE WHITELIST VIEW FROM SQLITE REGISTRY
 @app.route('/admin/voter-registry/<secret>')
 def dynamic_voter_registry_view(secret):
     if secret != ADMIN_SECRET:
         return "Unauthorized Request", 403
-    return render_template('voter_registry.html', students=AUTHORIZED_STUDENTS, secret=ADMIN_SECRET)
+    conn = sqlite3.connect('bcet_production.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT student_id, email FROM whitelist_registry")
+    rows = cursor.fetchall()
+    conn.close()
+    student_list = [{"id": r[0], "email": r[1]} for r in rows]
+    return render_template('voter_registry.html', students=student_list, secret=ADMIN_SECRET)
 
+# 🔥 FULLY UPDATED: LIVE INJECTION WITH COMPANION EMAIL DATA
 @app.route('/admin/add_student_live', methods=['POST'])
 def add_student_live():
     new_id = sanitize_input(request.form.get('student_id', '')).upper()
-    if new_id and new_id not in AUTHORIZED_STUDENTS:
-        AUTHORIZED_STUDENTS.append(new_id)
-        return jsonify({"status": "success", "message": f"Student Node [{new_id}] injected!"})
-    return jsonify({"status": "error", "message": "ID invalid or exists!"})
+    new_email = sanitize_input(request.form.get('email', '')).lower()
+    if new_id and new_email:
+        try:
+            conn = sqlite3.connect('bcet_production.db')
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO whitelist_registry VALUES (?, ?)", (new_id, new_email))
+            conn.commit()
+            conn.close()
+            return jsonify({"status": "success", "message": f"Student Node [{new_id}] mapped to [{new_email}] successfully!"})
+        except sqlite3.Error:
+            return jsonify({"status": "error", "message": "ID already exists in Database Whitelist!"})
+    return jsonify({"status": "error", "message": "Invalid mapping parameters provided!"})
 
+# 🔥 FULLY UPDATED: LIVE REMOVAL FROM DATABASE REGISTRY
 @app.route('/admin/delete_student_live', methods=['POST'])
 def delete_student_live():
     target_id = sanitize_input(request.form.get('student_id', '')).upper()
-    if target_id in AUTHORIZED_STUDENTS:
-        AUTHORIZED_STUDENTS.remove(target_id)
-        return jsonify({"status": "success", "message": f"Node [{target_id}] removed."})
+    conn = sqlite3.connect('bcet_production.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT student_id FROM whitelist_registry WHERE student_id=?", (target_id,))
+    exists = cursor.fetchone()
+    if exists:
+        cursor.execute("DELETE FROM whitelist_registry WHERE student_id=?", (target_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success", "message": f"Node [{target_id}] scrubbed from Whitelist Registry."})
+    conn.close()
     return jsonify({"status": "error", "message": "Target parsing mapping resolution error."})
 
 @app.route('/admin/factory-reset/<secret>')
