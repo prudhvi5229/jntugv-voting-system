@@ -43,26 +43,6 @@ RATE_LIMIT_WINDOW = 10
 MAX_REQUESTS_PER_WINDOW = 20 
 SYSTEM_FORENSIC_LOCKOUT = False # Critical Anti-Hacking Killswitch
 
-# --- AUTHORIZED STUDENT MATRIX SOURCE (MIGRATED TO DB ON INITIALIZATION) ---
-INITIAL_WHITELIST_SOURCE = [
-    "24V11A0501", "24V11A0502", "24V11A0503", "24V11A0504", "24V11A0505",
-    "24V11A0506", "24V11A0507", "24V11A0510", "24V11A0511", "24V11A0512",
-    "24V11A0513", "24V11A0514", "24V11A0515", "24V11A0516", "24V11A0517",
-    "24V11A0518", "24V11A0519", "24V11A0520", "24V11A0521", "24V11A0522",
-    "24V11A0523", "24V11A0525", "24V11A0526", "24V11A0527", "24V11A0528",
-    "24V11A0529", "24V11A0530", "24V11A0531", "24V11A0532", "24V11A0534",
-    "24V11A0535", "24V11A0536", "24V11A0537", "24V11A0538", "24V11A0539",
-    "24V11A0541", "24V11A0542", "24V11A0543", "24V11A0544", "24V11A0545",
-    "24V11A0546", "24V11A0547", "24V11A0548", "24V11A0549", "24V11A0550",
-    "24V11A0551", "24V11A0552", "24V11A0553", "24V11A0554", "24V11A0555",
-    "24V11A0556", "24V11A0557", "24V11A0558", "24V11A0559", "24V11A0560",
-    "24V11A0561", "24V11A0563", "24V11A0564", "24V11A0565", "24V11A0566",
-    "24V11A0567", "24V11A0568", "24V11A0569", "24V11A0570", "24V11A0571",
-    "24V11A0572", "24V11A0573", "24V11A0574", "24V11A0575", "24V11A0576",
-    "24V11A0577", "24V11A0578", "24V11A0579", "25V15A0501", "25V15A0502",
-    "25V15A0503", "25V15A0504"
-]
-
 def init_db():
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
@@ -72,16 +52,9 @@ def init_db():
     # Android Biometric Matrix Table
     cursor.execute('''CREATE TABLE IF NOT EXISTS android_biometrics 
                       (student_id TEXT PRIMARY KEY, fingerprint_data TEXT, face_vector TEXT)''')
-    # 🔥 DYNAMIC WHITELIST TABLE WITH EMAIL MAPPING
+    # 🔥 DYNAMIC WHITELIST TABLE WITH EMAIL MAPPING (కోడ్‌లో కాకుండా కేవలం డేటాబేస్ లో మాత్రమే స్టోర్ అవుతాయి)
     cursor.execute('''CREATE TABLE IF NOT EXISTS whitelist_registry 
                       (student_id TEXT PRIMARY KEY, email TEXT)''')
-    
-    # మీ పాత హార్డ్‌కోడెడ్ లిస్ట్ మొత్తాన్ని ఆటోమేటిక్‌గా డేటాబేస్ లోకి డైనమిక్ గా మ్యాప్ చేయడం
-    for sid in INITIAL_WHITELIST_SOURCE:
-        # డెమో ఈమెయిల్ ఫార్మాట్ (మీ టెస్టింగ్ ఐడీ 24V11A0522 కి మీ పర్సనల్ మెయిల్ బైండ్ అవుతుంది)
-        resolved_email = "prudhvi5229@gmail.com" if sid == "24V11A0522" else f"student_{sid.lower()}@bcet.in"
-        cursor.execute("INSERT OR IGNORE INTO whitelist_registry VALUES (?, ?)", (sid, resolved_email))
-        
     conn.commit()
     conn.close()
 
@@ -278,7 +251,6 @@ def api_admin_upload_biometrics():
     fingerprint_raw = data.get('fingerprint_data', None)
     face_vector_raw = data.get('face_vector', None)
     
-    # Check Whitelist validation from DB instead of old list
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
     cursor.execute("SELECT student_id FROM whitelist_registry WHERE student_id=?", (student_id,))
@@ -454,7 +426,7 @@ def verify_token():
 def signup_page():
     return render_template('signup.html')
 
-# 🔥 FULLY UPDATED: DATA-DRIVEN WHITELIST SIGN-UP ROUTE WITH AUTO-EMAIL TRANSMISSION
+# 🔥 FULLY UPDATED: 100% DATA-DRIVEN WHITELIST SIGN-UP ROUTE
 @app.route('/send_signup_otp', methods=['POST'])
 def send_signup_otp():
     student_id = sanitize_input(request.form.get('student_id', '')).upper()
