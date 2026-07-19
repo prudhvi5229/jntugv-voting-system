@@ -4,13 +4,13 @@ import time
 from datetime import datetime, timedelta
 import pytz
 from io import BytesIO
-import sqlite3 # Persistent Storage
-import re # Strict Input Sanitation
-import random # For OTP Generation
-import requests # Using HTTP Requests to completely bypass Render network/SMTP blocks
-import numpy as np # For numerical processing of Face Vectors from Android Engine
-import os # Secret configuration bypass for GitHub Guardrails
-from werkzeug.security import generate_password_hash, check_password_hash # Secure Hashing
+import sqlite3
+import re
+import random
+import requests
+import numpy as np
+import os
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, jsonify, make_response, url_for, session, redirect
 
 # PDF Libraries
@@ -18,7 +18,6 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 
-# INITIALIZE FLASK WITH STATIC FOLDER SUPPORT
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.secret_key = "BCET_BLOCKCHAIN_2026_SECURE_ULTRA_PRO_MAX_Z_PLUS_DEEPCORE_IMMUTABLE_HARSH"
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
@@ -26,8 +25,6 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 # --- CONFIGURATION ---
 IST = pytz.timezone('Asia/Kolkata')
 ADMIN_SECRET = "BCET_ADMIN_PRO" 
-
-# --- PRODUCTION BREVO HTTP API CONFIGURATION ---
 SENDER_EMAIL = "beharacollegeofengineering@gmail.com"
 
 # --- VOLATILE OTP MEMORY MATRIX ---
@@ -40,26 +37,24 @@ MAX_FAILED_ATTEMPTS = 5
 RATE_LIMIT_TRACKER = {} 
 RATE_LIMIT_WINDOW = 10 
 MAX_REQUESTS_PER_WINDOW = 20 
-SYSTEM_FORENSIC_LOCKOUT = False # Critical Anti-Hacking Killswitch
+SYSTEM_FORENSIC_LOCKOUT = False 
 
 def init_db():
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
-    # Web Auth Table 
+    
     cursor.execute('''CREATE TABLE IF NOT EXISTS users 
                       (student_id TEXT PRIMARY KEY, email TEXT, password_hash TEXT)''')
-    # Android Biometric Matrix Table
+                      
     cursor.execute('''CREATE TABLE IF NOT EXISTS android_biometrics 
                       (student_id TEXT PRIMARY KEY, fingerprint_data TEXT, face_vector TEXT)''')
-    # DYNAMIC WHITELIST TABLE WITH EMAIL MAPPING (100% Admin Controlled)
+                      
     cursor.execute('''CREATE TABLE IF NOT EXISTS whitelist_registry 
                       (student_id TEXT PRIMARY KEY, email TEXT)''')
     
-    # Persistent System Settings Table
     cursor.execute('''CREATE TABLE IF NOT EXISTS system_settings 
                       (key TEXT PRIMARY KEY, value TEXT)''')
     
-    # Initialize Default Timing Configurations
     cursor.execute("INSERT OR IGNORE INTO system_settings VALUES ('start_time', '2026-06-26T12:01')")
     cursor.execute("INSERT OR IGNORE INTO system_settings VALUES ('end_time', '2026-06-28T02:01')")
     cursor.execute("INSERT OR IGNORE INTO system_settings VALUES ('is_active', '1')")
@@ -77,7 +72,6 @@ ELECTION_SETTINGS = {
 }
 
 def mask_email(email_str):
-    """Masks email for privacy protection (e.g., pr******@gmail.com)"""
     try:
         parts = email_str.split('@')
         name = parts[0]
@@ -94,13 +88,13 @@ def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
     try:
         url = "https://api.brevo.com/v3/smtp/email"
         
-        # Split key implementation to dynamically bypass GitHub Automated Secret Guardrails Scanner
-        part1 = "xkeysib-9d6f3235d6450c510d7638a5b2823f9ef77e41ba649e8b16"
-        part2 = "8.1.6.8.a.d.b.0.3.d.c.1.7.b.7.a.f.8.-.I.t.Z.e.c.7.L.9.h.t.H.T.J.B.M".replace('.', '')
+        # Completely emptied hardcoded key to bypass GitHub rules engine scanning repository commits
+        fallback_key = ""
+        api_key = os.environ.get("BREVO_API_KEY", fallback_key)
         
         headers = {
             "accept": "application/json",
-            "api-key": os.environ.get("BREVO_API_KEY", f"{part1}{part2}"),
+            "api-key": api_key,
             "content-type": "application/json"
         }
         payload = {
@@ -213,7 +207,6 @@ def sanitize_input(text):
     if not text: return ""
     return re.sub(r"[<>\'\"\\;=\\-]", "", str(text)).strip()
 
-# --- APP BIOMETRIC VERIFICATION LOGIC ---
 def verify_fingerprint_match(saved_fingerprint, live_fingerprint):
     if not saved_fingerprint or not live_fingerprint:
         return False
@@ -372,7 +365,6 @@ def index():
     if not session.get('token_verified'):
         return redirect(url_for('auth_token_display'))
 
-    # Load Dynamic Timings from SQLite Persistence Layer
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
     cursor.execute("SELECT value FROM system_settings WHERE key='start_time'")
@@ -451,7 +443,6 @@ def verify_token():
 def signup_page():
     return render_template('signup.html')
 
-# 🔥 FULLY UPDATED: Strict Email Transmission Check Gate
 @app.route('/send_signup_otp', methods=['POST'])
 def send_signup_otp():
     student_id = sanitize_input(request.form.get('student_id', '')).upper()
@@ -478,7 +469,6 @@ def send_signup_otp():
     otp = str(random.randint(100021, 999989))
     display_masked_email = mask_email(registered_email)
 
-    # Validates successful delivery response before committing to runtime memory array
     if send_secure_otp_email(registered_email, otp, "Account Registration Gate"):
         SIGNUP_OTP_CACHE[student_id] = {
             "otp": otp, "email": registered_email, "password_hash": generate_password_hash(password),
@@ -491,7 +481,7 @@ def send_signup_otp():
     else:
         return jsonify({
             "status": "error", 
-            "message": "Email Transmission Failed! Brevo Key might be expired, scanned, or Daily Quota 300 Limit Exceeded."
+            "message": "Email Transmission Failed! Brevo Key might be expired, scanned, or Daily Quota Limit Exceeded."
         })
 
 @app.route('/verify_signup_otp', methods=['POST'])
@@ -654,8 +644,8 @@ def audit_portal():
             if result: break
     return render_template('audit.html', searched_id=searched_id, result=result)
 
-@app.route(f'/admin-results/{ADMIN_SECRET}')
-def admin_results():
+@app.route('/admin-results/<secret>')
+def admin_results(secret):
     global SYSTEM_FORENSIC_LOCKOUT
     vote_counts = {}
     for c in ELECTION_SETTINGS["candidates"]:
@@ -663,7 +653,6 @@ def admin_results():
         vote_counts[c['name']] = "🔴 LOCKOUT ACTIVE" if tally == -999 else tally
     return render_template('results.html', settings=ELECTION_SETTINGS, vote_counts=vote_counts, logs=consensus_blockchain.security_logs)
 
-# 🔥 FULLY UPDATED: DYNAMIC LIVE WHITELIST VIEW FROM SQLITE REGISTRY
 @app.route('/admin/voter-registry/<secret>')
 def dynamic_voter_registry_view(secret):
     if secret != ADMIN_SECRET:
@@ -676,9 +665,10 @@ def dynamic_voter_registry_view(secret):
     student_list = [{"id": r[0], "email": r[1]} for r in rows]
     return render_template('voter_registry.html', students=student_list, secret=ADMIN_SECRET)
 
-# 🔥 FULLY UPDATED: LIVE INJECTION WITH COMPANION EMAIL DATA
+# 🔥 FIXED DUAL ROUTING ARCHITECTURE (Eliminates 404 Exceptions completely)
 @app.route('/admin/add_student_live', methods=['POST'])
-def add_student_live():
+@app.route('/admin/add_student_live/<secret>', methods=['POST'])
+def add_student_live(secret=None):
     new_id = sanitize_input(request.form.get('student_id', '')).upper()
     new_email = sanitize_input(request.form.get('email', '')).lower()
     if new_id and new_email:
@@ -688,14 +678,14 @@ def add_student_live():
             cursor.execute("INSERT INTO whitelist_registry VALUES (?, ?)", (new_id, new_email))
             conn.commit()
             conn.close()
-            return jsonify({"status": "success", "message": f"Student Node [{new_id}] mapped to [{new_email}] successfully!"})
+            return jsonify({"status": "success", "message": f"Student Node [{new_id}] mapped successfully!"})
         except sqlite3.Error:
             return jsonify({"status": "error", "message": "ID already exists in Database Whitelist!"})
     return jsonify({"status": "error", "message": "Invalid mapping parameters provided!"})
 
-# 🔥 FULLY UPDATED: LIVE REMOVAL FROM DATABASE REGISTRY
 @app.route('/admin/delete_student_live', methods=['POST'])
-def delete_student_live():
+@app.route('/admin/delete_student_live/<secret>', methods=['POST'])
+def delete_student_live(secret=None):
     target_id = sanitize_input(request.form.get('student_id', '')).upper()
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
@@ -743,7 +733,6 @@ def sync_candidates():
     ELECTION_SETTINGS["candidates"] = updated_candidates
     return jsonify({"status": "success", "message": "Synced Successfully!"})
 
-# 🔥 FULLY UPDATED: SQLITE PERSISTENT TIME SAVE
 @app.route('/update_timing', methods=['POST'])
 def update_timing():
     data = request.json
@@ -759,7 +748,6 @@ def update_timing():
     conn.close()
     return jsonify({"status": "success"})
 
-# 🔥 FULLY UPDATED: SQLITE PERSISTENT TIME STOP
 @app.route('/stop_election', methods=['POST'])
 def stop_election():
     conn = sqlite3.connect('bcet_production.db')
