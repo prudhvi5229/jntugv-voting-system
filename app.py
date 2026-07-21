@@ -17,6 +17,13 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 
+# PostgreSQL Driver Import
+try:
+    import psycopg2
+    HAS_POSTGRES = True
+except ImportError:
+    HAS_POSTGRES = False
+
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.secret_key = "BCET_BLOCKCHAIN_2026_SECURE_ULTRA_PRO_MAX_Z_PLUS_DEEPCORE_IMMUTABLE_HARSH"
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
@@ -37,31 +44,80 @@ RATE_LIMIT_WINDOW = 10
 MAX_REQUESTS_PER_WINDOW = 20 
 SYSTEM_FORENSIC_LOCKOUT = False 
 
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+
+# --- DATABASE CONNECTION WRAPPER (POSTGRES / SQLITE FALLBACK) ---
+def get_db_connection():
+    if DATABASE_URL and HAS_POSTGRES:
+        url = DATABASE_URL
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql://", 1)
+        conn = psycopg2.connect(url)
+        conn.autocommit = True  # 🔥 CRITICAL FIX: Ensures live updates persist instantly
+        return conn, "postgres"
+    else:
+        conn = sqlite3.connect('bcet_production.db')
+        return conn, "sqlite"
+
+def format_datetime_for_input(dt_str):
+    if not dt_str:
+        return datetime.now(IST).strftime("%Y-%m-%dT%H:%M")
+    try:
+        clean_str = str(dt_str).strip().replace(" ", "T")
+        if len(clean_str) > 16:
+            clean_str = clean_str[:16]
+        return clean_str
+    except Exception:
+        return datetime.now(IST).strftime("%Y-%m-%dT%H:%M")
+
 def init_db():
-    conn = sqlite3.connect('bcet_production.db')
-    cursor = conn.cursor()
-    
-    cursor.execute('''CREATE TABLE IF NOT EXISTS users 
-                      (student_id TEXT PRIMARY KEY, email TEXT, password_hash TEXT)''')
-                      
-    cursor.execute('''CREATE TABLE IF NOT EXISTS android_biometrics 
-                      (student_id TEXT PRIMARY KEY, fingerprint_data TEXT, face_vector TEXT)''')
-                      
-    cursor.execute('''CREATE TABLE IF NOT EXISTS whitelist_registry 
-                      (student_id TEXT PRIMARY KEY, email TEXT)''')
-    
-    cursor.execute('''CREATE TABLE IF NOT EXISTS system_settings 
-                      (key TEXT PRIMARY KEY, value TEXT)''')
-    
-    now_str = datetime.now(IST).strftime("%Y-%m-%dT%H:%M")
-    future_str = (datetime.now(IST) + timedelta(days=7)).strftime("%Y-%m-%dT%H:%M")
-    
-    cursor.execute("INSERT OR IGNORE INTO system_settings VALUES ('start_time', ?)", (now_str,))
-    cursor.execute("INSERT OR IGNORE INTO system_settings VALUES ('end_time', ?)", (future_str,))
-    cursor.execute("INSERT OR IGNORE INTO system_settings VALUES ('is_active', '1')")
-    
-    conn.commit()
-    conn.close()
+    try:
+        conn, db_type = get_db_connection()
+        cursor = conn.cursor()
+        
+        if db_type == "postgres":
+            cursor.execute('''CREATE TABLE IF NOT EXISTS users 
+                              (student_id VARCHAR(100) PRIMARY KEY, email VARCHAR(255), password_hash TEXT)''')
+                              
+            cursor.execute('''CREATE TABLE IF NOT EXISTS android_biometrics 
+                              (student_id VARCHAR(100) PRIMARY KEY, fingerprint_data TEXT, face_vector TEXT)''')
+                              
+            cursor.execute('''CREATE TABLE IF NOT EXISTS whitelist_registry 
+                              (student_id VARCHAR(100) PRIMARY KEY, email VARCHAR(255))''')
+            
+            cursor.execute('''CREATE TABLE IF NOT EXISTS system_settings 
+                              (key VARCHAR(100) PRIMARY KEY, value TEXT)''')
+            
+            now_str = datetime.now(IST).strftime("%Y-%m-%dT%H:%M")
+            future_str = (datetime.now(IST) + timedelta(days=7)).strftime("%Y-%m-%dT%H:%M")
+            
+            cursor.execute("INSERT INTO system_settings VALUES ('start_time', %s) ON CONFLICT (key) DO NOTHING", (now_str,))
+            cursor.execute("INSERT INTO system_settings VALUES ('end_time', %s) ON CONFLICT (key) DO NOTHING", (future_str,))
+            cursor.execute("INSERT INTO system_settings VALUES ('is_active', '1') ON CONFLICT (key) DO NOTHING")
+        else:
+            cursor.execute('''CREATE TABLE IF NOT EXISTS users 
+                              (student_id TEXT PRIMARY KEY, email TEXT, password_hash TEXT)''')
+                              
+            cursor.execute('''CREATE TABLE IF NOT EXISTS android_biometrics 
+                              (student_id TEXT PRIMARY KEY, fingerprint_data TEXT, face_vector TEXT)''')
+                              
+            cursor.execute('''CREATE TABLE IF NOT EXISTS whitelist_registry 
+                              (student_id TEXT PRIMARY KEY, email TEXT)''')
+            
+            cursor.execute('''CREATE TABLE IF NOT EXISTS system_settings 
+                              (key TEXT PRIMARY KEY, value TEXT)''')
+            
+            now_str = datetime.now(IST).strftime("%Y-%m-%dT%H:%M")
+            future_str = (datetime.now(IST) + timedelta(days=7)).strftime("%Y-%m-%dT%H:%M")
+            
+            cursor.execute("INSERT OR IGNORE INTO system_settings VALUES ('start_time', ?)", (now_str,))
+            cursor.execute("INSERT OR IGNORE INTO system_settings VALUES ('end_time', ?)", (future_str,))
+            cursor.execute("INSERT OR IGNORE INTO system_settings VALUES ('is_active', '1')")
+            conn.commit()
+            
+        conn.close()
+    except Exception as e:
+        print(f"Database Init Exception: {e}")
 
 init_db()
 
@@ -77,10 +133,7 @@ def mask_email(email_str):
         parts = email_str.split('@')
         name = parts[0]
         domain = parts[1]
-        if len(name) <= 2:
-            masked_name = name + "**"
-        else:
-            masked_name = name[:2] + "**" + name[-1]
+        masked_name = name + "**" if len(name) <= 2 else name[:2] + "**" + name[-1]
         return f"{masked_name}@{domain}"
     except Exception:
         return "your registered email"
@@ -223,9 +276,12 @@ def api_admin_upload_biometrics():
     fingerprint_raw = data.get('fingerprint_data', None)
     face_vector_raw = data.get('face_vector', None)
     
-    conn = sqlite3.connect('bcet_production.db')
+    conn, db_type = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT student_id FROM whitelist_registry WHERE student_id=?", (student_id,))
+    if db_type == "postgres":
+        cursor.execute("SELECT student_id FROM whitelist_registry WHERE student_id=%s", (student_id,))
+    else:
+        cursor.execute("SELECT student_id FROM whitelist_registry WHERE student_id=?", (student_id,))
     whitelisted = cursor.fetchone()
     
     if not whitelisted:
@@ -234,11 +290,14 @@ def api_admin_upload_biometrics():
         
     face_vector_str = json.dumps(face_vector_raw) if face_vector_raw else None
     try:
-        cursor.execute("INSERT OR REPLACE INTO android_biometrics VALUES (?, ?, ?)", (student_id, fingerprint_raw, face_vector_str))
-        conn.commit()
+        if db_type == "postgres":
+            cursor.execute("INSERT INTO android_biometrics VALUES (%s, %s, %s) ON CONFLICT (student_id) DO UPDATE SET fingerprint_data = EXCLUDED.fingerprint_data, face_vector = EXCLUDED.face_vector", (student_id, fingerprint_raw, face_vector_str))
+        else:
+            cursor.execute("INSERT OR REPLACE INTO android_biometrics VALUES (?, ?, ?)", (student_id, fingerprint_raw, face_vector_str))
+            conn.commit()
         conn.close()
         return jsonify({"status": "success", "message": "Biometrics mapped successfully!"})
-    except sqlite3.Error as e:
+    except Exception as e:
         conn.close()
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -250,9 +309,12 @@ def api_biometric_login():
     live_face_vector = data.get('live_face_vector', None)
     client_ip = get_client_ip()
 
-    conn = sqlite3.connect('bcet_production.db')
+    conn, db_type = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT student_id FROM whitelist_registry WHERE student_id=?", (student_id,))
+    if db_type == "postgres":
+        cursor.execute("SELECT student_id FROM whitelist_registry WHERE student_id=%s", (student_id,))
+    else:
+        cursor.execute("SELECT student_id FROM whitelist_registry WHERE student_id=?", (student_id,))
     whitelisted = cursor.fetchone()
 
     if not whitelisted:
@@ -260,7 +322,10 @@ def api_biometric_login():
         consensus_blockchain.log_intrusion(student_id, "Non-Whitelist ID Attempt", client_ip)
         return jsonify({"status": "error", "message": "FAILED: Student ID is not authorized!"}), 401
 
-    cursor.execute("SELECT fingerprint_data, face_vector FROM android_biometrics WHERE student_id=?", (student_id,))
+    if db_type == "postgres":
+        cursor.execute("SELECT fingerprint_data, face_vector FROM android_biometrics WHERE student_id=%s", (student_id,))
+    else:
+        cursor.execute("SELECT fingerprint_data, face_vector FROM android_biometrics WHERE student_id=?", (student_id,))
     row = cursor.fetchone()
     conn.close()
 
@@ -337,25 +402,24 @@ def index():
     if not session.get('token_verified'):
         return redirect(url_for('auth_token_display'))
 
-    conn = sqlite3.connect('bcet_production.db')
+    conn, db_type = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT value FROM system_settings WHERE key='start_time'")
     db_start_row = cursor.fetchone()
-    db_start = db_start_row[0] if db_start_row else datetime.now(IST).strftime("%Y-%m-%dT%H:%M")
-
     cursor.execute("SELECT value FROM system_settings WHERE key='end_time'")
     db_end_row = cursor.fetchone()
-    db_end = db_end_row[0] if db_end_row else (datetime.now(IST) + timedelta(days=7)).strftime("%Y-%m-%dT%H:%M")
-
     cursor.execute("SELECT value FROM system_settings WHERE key='is_active'")
     db_active_row = cursor.fetchone()
-    db_active = (db_active_row[0] == '1') if db_active_row else True
     conn.close()
+
+    db_start = db_start_row[0] if db_start_row else datetime.now(IST).strftime("%Y-%m-%dT%H:%M")
+    db_end = db_end_row[0] if db_end_row else (datetime.now(IST) + timedelta(days=7)).strftime("%Y-%m-%dT%H:%M")
+    db_active = (db_active_row[0] == '1') if db_active_row else True
 
     current_settings = {
         "candidates": ELECTION_SETTINGS["candidates"],
-        "start_time": db_start,
-        "end_time": db_end,
+        "start_time": format_datetime_for_input(db_start),
+        "end_time": format_datetime_for_input(db_end),
         "is_active": db_active
     }
 
@@ -363,11 +427,10 @@ def index():
     
     def parse_election_time(time_str):
         try:
-            if "T" in time_str:
-                return datetime.strptime(time_str, "%Y-%m-%dT%H:%M").replace(tzinfo=IST)
-            elif "-" in time_str:
-                return datetime.strptime(time_str, "%Y-%m-%d %H:%M").replace(tzinfo=IST)
-            return datetime.strptime(time_str, "%Y%m%dT%H:%M").replace(tzinfo=IST)
+            clean_str = str(time_str).strip().replace("T", " ")
+            if len(clean_str) > 16:
+                clean_str = clean_str[:16]
+            return datetime.strptime(clean_str, "%Y-%m-%d %H:%M").replace(tzinfo=IST)
         except Exception:
             return None
 
@@ -428,9 +491,12 @@ def send_signup_otp():
     student_id = sanitize_input(request.form.get('student_id', '')).upper()
     password = request.form.get('password', '').strip()
 
-    conn = sqlite3.connect('bcet_production.db')
+    conn, db_type = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT email FROM whitelist_registry WHERE student_id=?", (student_id,))
+    if db_type == "postgres":
+        cursor.execute("SELECT email FROM whitelist_registry WHERE student_id=%s", (student_id,))
+    else:
+        cursor.execute("SELECT email FROM whitelist_registry WHERE student_id=?", (student_id,))
     row = cursor.fetchone()
     
     if not row:
@@ -440,7 +506,10 @@ def send_signup_otp():
     
     registered_email = row[0]
 
-    cursor.execute("SELECT student_id FROM users WHERE student_id=?", (student_id,))
+    if db_type == "postgres":
+        cursor.execute("SELECT student_id FROM users WHERE student_id=%s", (student_id,))
+    else:
+        cursor.execute("SELECT student_id FROM users WHERE student_id=?", (student_id,))
     if cursor.fetchone():
         conn.close()
         return jsonify({"status": "error", "message": "Already registered! Log in directly."})
@@ -471,18 +540,23 @@ def verify_signup_otp():
 
     if cache["otp"] == user_otp:
         try:
-            conn = sqlite3.connect('bcet_production.db')
+            conn, db_type = get_db_connection()
             cursor = conn.cursor()
             
-            cursor.execute("DELETE FROM users WHERE student_id=?", (student_id,))
-            cursor.execute("INSERT INTO users (student_id, email, password_hash) VALUES (?, ?, ?)", 
-                           (student_id, cache["email"], cache["password_hash"]))
-            conn.commit()
+            if db_type == "postgres":
+                cursor.execute("DELETE FROM users WHERE student_id=%s", (student_id,))
+                cursor.execute("INSERT INTO users (student_id, email, password_hash) VALUES (%s, %s, %s)", 
+                               (student_id, cache["email"], cache["password_hash"]))
+            else:
+                cursor.execute("DELETE FROM users WHERE student_id=?", (student_id,))
+                cursor.execute("INSERT INTO users (student_id, email, password_hash) VALUES (?, ?, ?)", 
+                               (student_id, cache["email"], cache["password_hash"]))
+                conn.commit()
             conn.close()
             
             SIGNUP_OTP_CACHE.pop(student_id, None)
             return jsonify({"status": "success", "message": "Account created successfully! Log in now."})
-        except sqlite3.Error as e:
+        except Exception as e:
             return jsonify({"status": "error", "message": f"Database Error: {str(e)}"})
     else:
         consensus_blockchain.log_intrusion(student_id, "Incorrect OTP Entry", get_client_ip())
@@ -498,9 +572,12 @@ def login():
         consensus_blockchain.log_intrusion(student_id, "Brute Force Threshold Breached", client_ip)
         return "<h1>IP blocked temporarily due to excessive failures.</h1>", 423
 
-    conn = sqlite3.connect('bcet_production.db')
+    conn, db_type = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT password_hash FROM users WHERE student_id=?", (student_id,))
+    if db_type == "postgres":
+        cursor.execute("SELECT password_hash FROM users WHERE student_id=%s", (student_id,))
+    else:
+        cursor.execute("SELECT password_hash FROM users WHERE student_id=?", (student_id,))
     user = cursor.fetchone()
     conn.close()
 
@@ -524,11 +601,16 @@ def forgot_password_page():
 def send_forgot_otp():
     student_id = sanitize_input(request.form.get('student_id', '')).upper()
     email = sanitize_input(request.form.get('email', '')).lower()
-    conn = sqlite3.connect('bcet_production.db')
+    
+    conn, db_type = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT email FROM users WHERE student_id=?", (student_id,))
+    if db_type == "postgres":
+        cursor.execute("SELECT email FROM users WHERE student_id=%s", (student_id,))
+    else:
+        cursor.execute("SELECT email FROM users WHERE student_id=?", (student_id,))
     user = cursor.fetchone()
     conn.close()
+
     if not user or user[0] != email:
         return jsonify({"status": "error", "message": "Credentials mismatch mapping!"})
     
@@ -555,11 +637,15 @@ def commit_new_password():
     cache = FORGOT_OTP_CACHE.get(student_id)
     if not cache or not cache.get("verified"):
         return jsonify({"status": "error", "message": "State access architecture violation blocked!"})
+    
     hashed = generate_password_hash(new_password)
-    conn = sqlite3.connect('bcet_production.db')
+    conn, db_type = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("UPDATE users SET password_hash=? WHERE student_id=?", (hashed, student_id))
-    conn.commit()
+    if db_type == "postgres":
+        cursor.execute("UPDATE users SET password_hash=%s WHERE student_id=%s", (hashed, student_id))
+    else:
+        cursor.execute("UPDATE users SET password_hash=? WHERE student_id=?", (hashed, student_id))
+        conn.commit()
     conn.close()
     FORGOT_OTP_CACHE.pop(student_id, None)
     return jsonify({"status": "success", "message": "Secret password allocation overridden successfully!"})
@@ -574,7 +660,7 @@ def cast_vote():
     if 'user_id' not in session or not session.get('token_verified'):
         return redirect(url_for('welcome'))
     
-    conn = sqlite3.connect('bcet_production.db')
+    conn, db_type = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT value FROM system_settings WHERE key='is_active'")
     db_active = cursor.fetchone()[0] == '1'
@@ -636,7 +722,7 @@ def admin_results(secret=None):
         tally = consensus_blockchain.verify_consensus_and_tally(c['name'])
         vote_counts[c['name']] = "🔴 LOCKOUT ACTIVE" if tally == -999 else tally
 
-    conn = sqlite3.connect('bcet_production.db')
+    conn, db_type = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT value FROM system_settings WHERE key='start_time'")
     r_start = cursor.fetchone()
@@ -646,10 +732,13 @@ def admin_results(secret=None):
     r_active = cursor.fetchone()
     conn.close()
 
+    raw_start = r_start[0] if r_start else ""
+    raw_end = r_end[0] if r_end else ""
+
     current_settings = {
         "candidates": ELECTION_SETTINGS["candidates"],
-        "start_time": r_start[0] if r_start else "",
-        "end_time": r_end[0] if r_end else "",
+        "start_time": format_datetime_for_input(raw_start),
+        "end_time": format_datetime_for_input(raw_end),
         "is_active": (r_active[0] == '1') if r_active else True
     }
 
@@ -658,7 +747,7 @@ def admin_results(secret=None):
 @app.route('/admin/voter-registry', methods=['GET'], strict_slashes=False)
 @app.route('/admin/voter-registry/<path:secret>', methods=['GET'], strict_slashes=False)
 def dynamic_voter_registry_view(secret=None):
-    conn = sqlite3.connect('bcet_production.db')
+    conn, db_type = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT student_id, email FROM whitelist_registry")
     rows = cursor.fetchall()
@@ -673,31 +762,44 @@ def add_student_live(secret=None):
     new_email = sanitize_input(request.form.get('email', '')).lower()
     if new_id and new_email:
         try:
-            conn = sqlite3.connect('bcet_production.db')
+            conn, db_type = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute("INSERT OR REPLACE INTO whitelist_registry VALUES (?, ?)", (new_id, new_email))
-            conn.commit()
+            if db_type == "postgres":
+                cursor.execute("INSERT INTO whitelist_registry VALUES (%s, %s) ON CONFLICT (student_id) DO UPDATE SET email = EXCLUDED.email", (new_id, new_email))
+            else:
+                cursor.execute("INSERT OR REPLACE INTO whitelist_registry VALUES (?, ?)", (new_id, new_email))
+                conn.commit()
             conn.close()
-            return jsonify({"status": "success", "message": f"Student Node [{new_id}] mapped successfully!"})
-        except sqlite3.Error:
-            return jsonify({"status": "error", "message": "ID mapping database error!"})
-    return jsonify({"status": "error", "message": "Invalid mapping parameters provided!"})
+            return jsonify({"status": "success", "message": f"Student [{new_id}] mapped permanently!"})
+        except Exception as e:
+            return jsonify({"status": "error", "message": f"Database Error: {str(e)}"})
+    return jsonify({"status": "error", "message": "Invalid Hall Ticket or Email format!"})
 
 @app.route('/admin/delete_student_live', methods=['POST'], strict_slashes=False)
 @app.route('/admin/delete_student_live/<path:secret>', methods=['POST'], strict_slashes=False)
 def delete_student_live(secret=None):
     target_id = sanitize_input(request.form.get('student_id', '')).upper()
-    conn = sqlite3.connect('bcet_production.db')
+    conn, db_type = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT student_id FROM whitelist_registry WHERE student_id=?", (target_id,))
-    exists = cursor.fetchone()
-    if exists:
-        cursor.execute("DELETE FROM whitelist_registry WHERE student_id=?", (target_id,))
-        conn.commit()
-        conn.close()
-        return jsonify({"status": "success", "message": f"Node [{target_id}] scrubbed from Whitelist Registry."})
+    if db_type == "postgres":
+        cursor.execute("SELECT student_id FROM whitelist_registry WHERE student_id=%s", (target_id,))
+        exists = cursor.fetchone()
+        if exists:
+            cursor.execute("DELETE FROM whitelist_registry WHERE student_id=%s", (target_id,))
+            cursor.execute("DELETE FROM users WHERE student_id=%s", (target_id,))
+            conn.close()
+            return jsonify({"status": "success", "message": f"Student [{target_id}] scrubbed permanently."})
+    else:
+        cursor.execute("SELECT student_id FROM whitelist_registry WHERE student_id=?", (target_id,))
+        exists = cursor.fetchone()
+        if exists:
+            cursor.execute("DELETE FROM whitelist_registry WHERE student_id=?", (target_id,))
+            cursor.execute("DELETE FROM users WHERE student_id=?", (target_id,))
+            conn.commit()
+            conn.close()
+            return jsonify({"status": "success", "message": f"Student [{target_id}] scrubbed permanently."})
     conn.close()
-    return jsonify({"status": "error", "message": "Target parsing mapping resolution error."})
+    return jsonify({"status": "error", "message": "Student ID not found!"})
 
 @app.route('/admin/factory-reset', methods=['GET'], strict_slashes=False)
 @app.route('/admin/factory-reset/<path:secret>', methods=['GET'], strict_slashes=False)
@@ -709,11 +811,15 @@ def execute_node_flush():
     target_id = sanitize_input(request.form.get('student_id', '')).upper()
     if not target_id:
         return jsonify({"status": "error", "message": "Empty tracker reference."})
-    conn = sqlite3.connect('bcet_production.db')
+    conn, db_type = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM users WHERE student_id=?", (target_id,))
-    cursor.execute("DELETE FROM android_biometrics WHERE student_id=?", (target_id,))
-    conn.commit()
+    if db_type == "postgres":
+        cursor.execute("DELETE FROM users WHERE student_id=%s", (target_id,))
+        cursor.execute("DELETE FROM android_biometrics WHERE student_id=%s", (target_id,))
+    else:
+        cursor.execute("DELETE FROM users WHERE student_id=?", (target_id,))
+        cursor.execute("DELETE FROM android_biometrics WHERE student_id=?", (target_id,))
+        conn.commit()
     conn.close()
     return jsonify({"status": "success", "message": f"Database scrubbed for Student [{target_id}]."})
 
@@ -737,21 +843,32 @@ def update_timing():
     start_val = sanitize_input(data.get('start', ''))
     end_val = sanitize_input(data.get('end', ''))
     
-    conn = sqlite3.connect('bcet_production.db')
+    formatted_start = format_datetime_for_input(start_val)
+    formatted_end = format_datetime_for_input(end_val)
+    
+    conn, db_type = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('start_time', ?)", (start_val,))
-    cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('end_time', ?)", (end_val,))
-    cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('is_active', '1')")
-    conn.commit()
+    if db_type == "postgres":
+        cursor.execute("INSERT INTO system_settings VALUES ('start_time', %s) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", (formatted_start,))
+        cursor.execute("INSERT INTO system_settings VALUES ('end_time', %s) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", (formatted_end,))
+        cursor.execute("INSERT INTO system_settings VALUES ('is_active', '1') ON CONFLICT (key) DO UPDATE SET value = '1'")
+    else:
+        cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('start_time', ?)", (formatted_start,))
+        cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('end_time', ?)", (formatted_end,))
+        cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('is_active', '1')")
+        conn.commit()
     conn.close()
     return jsonify({"status": "success"})
 
 @app.route('/stop_election', methods=['POST'], strict_slashes=False)
 def stop_election():
-    conn = sqlite3.connect('bcet_production.db')
+    conn, db_type = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('is_active', '0')")
-    conn.commit()
+    if db_type == "postgres":
+        cursor.execute("INSERT INTO system_settings VALUES ('is_active', '0') ON CONFLICT (key) DO UPDATE SET value = '0'")
+    else:
+        cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('is_active', '0')")
+        conn.commit()
     conn.close()
     return jsonify({"status": "success"})
 
