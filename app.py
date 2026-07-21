@@ -27,9 +27,10 @@ IST = pytz.timezone('Asia/Kolkata')
 ADMIN_SECRET = "BCET_ADMIN_PRO" 
 SENDER_EMAIL = "beharacollegeofengineering@gmail.com"
 
-# --- VOLATILE OTP MEMORY MATRIX ---
+# --- VOLATILE OTP & PASSCODE MEMORY MATRIX ---
 SIGNUP_OTP_CACHE = {}  
 FORGOT_OTP_CACHE = {}  
+DIRECT_OTP_CACHE = {}
 
 # --- ADVANCED SECURITY MEMORY MATRIX ---
 FAILED_ATTEMPTS = {} 
@@ -83,34 +84,6 @@ def mask_email(email_str):
         return f"{masked_name}@{domain}"
     except Exception:
         return "your registered email"
-
-def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
-    try:
-        url = "https://api.brevo.com/v3/smtp/email"
-        
-        # Pulls BREVO_API_KEY directly from Render environment variables
-        api_key = os.environ.get("BREVO_API_KEY", "")
-        
-        headers = {
-            "accept": "application/json",
-            "api-key": api_key,
-            "content-type": "application/json"
-        }
-        payload = {
-            "sender": {"name": "BCET Gatekeeper", "email": SENDER_EMAIL},
-            "to": [{"email": target_email}],
-            "subject": f"Secure Gatekeeper - OTP for {purpose}",
-            "textContent": f"Hello Student,\n\nYour 6-Digit One-Time Password (OTP) for BCET Voting System {purpose} is: {otp_code}\n\nThis code is valid for 5 minutes only.\n\nRegards,\nBCET Blockchain Core Engine"
-        }
-        
-        response = requests.post(url, headers=headers, json=payload, timeout=8)
-        if response.status_code in [200, 201, 202]:
-            return True
-        print(f"Brevo API Failure Status {response.status_code}: {response.text}")
-        return False
-    except Exception as e:
-        print(f"Network Transmission API Error: {e}")
-        return False
 
 # --- TRI-NODE CRYPTOGRAPHIC BLOCKCHAIN ENGINE ---
 class CryptographicNode:
@@ -240,7 +213,7 @@ def intercept_rate_limits():
 
 # --- ANDROID APP INTEGRATION ENDPOINTS ---
 
-@app.route('/api/admin/upload_biometrics', methods=['POST'])
+@app.route('/api/admin/upload_biometrics', methods=['POST'], strict_slashes=False)
 def api_admin_upload_biometrics():
     secret = request.headers.get('Admin-Secret', '')
     if secret != ADMIN_SECRET:
@@ -269,7 +242,7 @@ def api_admin_upload_biometrics():
         conn.close()
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route('/api/biometric_login', methods=['POST'])
+@app.route('/api/biometric_login', methods=['POST'], strict_slashes=False)
 def api_biometric_login():
     data = request.json
     student_id = sanitize_input(data.get('student_id', '')).upper()
@@ -315,7 +288,7 @@ def api_biometric_login():
         consensus_blockchain.log_intrusion(student_id, "Biometric Failed (Both Failed)", client_ip)
         return jsonify({"status": "error", "message": "FAILED: Biometric mismatch!"}), 403
 
-@app.route('/api/verify_app_token', methods=['POST'])
+@app.route('/api/verify_app_token', methods=['POST'], strict_slashes=False)
 def api_verify_app_token():
     data = request.json
     student_id = sanitize_input(data.get('student_id', '')).upper()
@@ -341,28 +314,201 @@ def api_verify_app_token():
 
 # --- WEB PORTAL ROUTES ---
 
-@app.route('/welcome')
+@app.route('/welcome', strict_slashes=False)
 def welcome():
     if 'user_id' in session and session.get('token_verified'):
         return redirect(url_for('index'))
     return render_template('welcome.html')
 
-@app.route('/login_page')
+@app.route('/login_page', strict_slashes=False)
 def login_page():
     return render_template('login.html')
 
-@app.route('/')
-def index():
-    if 'user_id' not in session:
-        return redirect(url_for('welcome'))
-    
-    if session.get('user_ip') != get_client_ip():
-        consensus_blockchain.log_intrusion(session.get('user_id'), "Session Hijack Blocked (IP Alteration)", get_client_ip())
-        session.clear()
-        return redirect(url_for('welcome'))
+@app.route('/signup_page', strict_slashes=False)
+def signup_page():
+    return render_template('signup.html')
 
-    if not session.get('token_verified'):
+@app.route('/auth_token_display', strict_slashes=False)
+def auth_token_display():
+    if 'user_id' not in session:
+        return redirect(url_for('login_page'))
+    
+    sid = session['user_id']
+    raw_data = f"{sid}{time.time()}{app.secret_key}"
+    blockchain_token = hashlib.sha256(raw_data.encode()).hexdigest().upper()[:12]
+    
+    session['binding_signature'] = hashlib.sha256(f"{sid}{get_client_ip()}{blockchain_token}".encode()).hexdigest()
+    session['generated_token'] = blockchain_token
+    session['token_verified'] = False 
+    return render_template('auth_token_display.html', token=blockchain_token)
+
+@app.route('/verify_token_page', strict_slashes=False)
+def verify_token_page():
+    if 'user_id' not in session:
+        return redirect(url_for('login_page'))
+    return render_template('token_verification_input.html')
+
+@app.route('/verify_token', methods=['POST'], strict_slashes=False)
+def verify_token():
+    user_input = sanitize_input(request.form.get('input_token', '')).upper()
+    actual_token = session.get('generated_token')
+
+    if user_input and user_input == actual_token:
+        session['token_verified'] = True
+        return redirect(url_for('index'))
+    else:
+        consensus_blockchain.log_intrusion(session.get('user_id'), "Token Guard Exception Triggered", get_client_ip())
+        return render_template('token_verification_input.html', error="Invalid Token!")
+
+# 🔥 INSTANT SCREEN POPUP CODE GENERATION
+@app.route('/send_signup_otp', methods=['POST'], strict_slashes=False)
+def send_signup_otp():
+    email = sanitize_input(request.form.get('student_id', '')).lower()
+    
+    conn = sqlite3.connect('bcet_production.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT student_id FROM whitelist_registry WHERE LOWER(email)=? OR UPPER(student_id)=?", (email, email.upper()))
+    row = cursor.fetchone()
+    
+    if not row:
+        conn.close()
+        consensus_blockchain.log_intrusion(email, "Non-Whitelisted Access Attempt", get_client_ip())
+        return jsonify({"status": "error", "message": "Email ID or Roll Number is NOT Authorized in College Whitelist!"})
+    
+    student_id = row[0]
+    
+    nullifier = hashlib.sha256(f"{student_id}BCET_SALT_2026".encode()).hexdigest()
+    if nullifier in consensus_blockchain.nullifiers:
+        conn.close()
+        return jsonify({"status": "error", "message": "You have ALREADY CAST your vote in this election!"})
+        
+    conn.close()
+
+    generated_passcode = str(random.randint(100021, 999989))
+    DIRECT_OTP_CACHE[student_id] = {
+        "passcode": generated_passcode,
+        "expires": time.time() + 300
+    }
+
+    return jsonify({
+        "status": "success", 
+        "message": f"🔑 YOUR VERIFICATION PASSCODE IS: {generated_passcode}",
+        "passcode": generated_passcode
+    })
+
+@app.route('/verify_signup_otp', methods=['POST'], strict_slashes=False)
+def verify_signup_otp():
+    email = sanitize_input(request.form.get('student_id', '')).lower()
+    user_passcode = sanitize_input(request.form.get('otp', '')).strip()
+
+    conn = sqlite3.connect('bcet_production.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT student_id FROM whitelist_registry WHERE LOWER(email)=? OR UPPER(student_id)=?", (email, email.upper()))
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        return jsonify({"status": "error", "message": "Unauthorized Voter ID!"})
+
+    student_id = row[0]
+    cache = DIRECT_OTP_CACHE.get(student_id)
+
+    if not cache or time.time() > cache["expires"]:
+        return jsonify({"status": "error", "message": "Passcode Expired! Click Get Code again."})
+
+    if cache["passcode"] == user_passcode:
+        session.clear()
+        session['user_id'] = student_id
+        session['user_ip'] = get_client_ip()
+        session['token_verified'] = True
+        DIRECT_OTP_CACHE.pop(student_id, None)
+        return jsonify({"status": "success", "message": "Identity Verified! Redirecting to Ballot Paper..."})
+    else:
+        consensus_blockchain.log_intrusion(student_id, "Incorrect Passcode Entered", get_client_ip())
+        return jsonify({"status": "error", "message": "Incorrect Verification Passcode!"})
+
+@app.route('/login', methods=['POST'], strict_slashes=False)
+def login():
+    student_id = sanitize_input(request.form.get('student_id', '')).upper()
+    password = request.form.get('password', '').strip()
+    client_ip = get_client_ip()
+
+    if FAILED_ATTEMPTS.get(client_ip, 0) >= MAX_FAILED_ATTEMPTS:
+        consensus_blockchain.log_intrusion(student_id, "Brute Force Threshold Breached", client_ip)
+        return "<h1>IP blocked temporarily due to excessive failures.</h1>", 423
+
+    conn = sqlite3.connect('bcet_production.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT password_hash FROM users WHERE student_id=?", (student_id,))
+    user = cursor.fetchone()
+    conn.close()
+
+    if user and check_password_hash(user[0], password):
+        FAILED_ATTEMPTS[client_ip] = 0 
+        session.permanent = True
+        session['user_id'] = student_id
+        session['user_ip'] = client_ip 
+        session['token_verified'] = False
         return redirect(url_for('auth_token_display'))
+    
+    FAILED_ATTEMPTS[client_ip] = FAILED_ATTEMPTS.get(client_ip, 0) + 1
+    consensus_blockchain.log_intrusion(student_id, f"Failed Node Authentication ({FAILED_ATTEMPTS[client_ip]}/{MAX_FAILED_ATTEMPTS})", client_ip)
+    return render_template('login_error.html')
+
+@app.route('/forgot_password_page', strict_slashes=False)
+def forgot_password_page():
+    return render_template('forgot_password.html')
+
+@app.route('/send_forgot_otp', methods=['POST'], strict_slashes=False)
+def send_forgot_otp():
+    student_id = sanitize_input(request.form.get('student_id', '')).upper()
+    email = sanitize_input(request.form.get('email', '')).lower()
+    
+    conn = sqlite3.connect('bcet_production.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT email FROM whitelist_registry WHERE student_id=?", (student_id,))
+    user = cursor.fetchone()
+    conn.close()
+    
+    if not user or user[0].lower() != email:
+        return jsonify({"status": "error", "message": "Credentials mismatch mapping!"})
+        
+    otp = str(random.randint(100021, 999989))
+    FORGOT_OTP_CACHE[student_id] = {"otp": otp, "expires": time.time() + 300, "verified": False}
+    return jsonify({"status": "success", "message": f"🔑 RECOVERY PASSCODE: {otp}", "passcode": otp})
+
+@app.route('/verify_forgot_code', methods=['POST'], strict_slashes=False)
+def verify_forgot_code():
+    student_id = sanitize_input(request.form.get('student_id', '')).upper()
+    user_otp = sanitize_input(request.form.get('otp', '')).strip()
+    cache = FORGOT_OTP_CACHE.get(student_id)
+    if not cache or time.time() > cache["expires"]:
+        return jsonify({"status": "error", "message": "Token window session expired!"})
+    if cache["otp"] == user_otp:
+        FORGOT_OTP_CACHE[student_id]["verified"] = True
+        return jsonify({"status": "success", "message": "Security shield cleared!"})
+    return jsonify({"status": "error", "message": "Invalid security authentication code sequence."})
+
+@app.route('/commit_new_password', methods=['POST'], strict_slashes=False)
+def commit_new_password():
+    student_id = sanitize_input(request.form.get('student_id', '')).upper()
+    new_password = request.form.get('password', '').strip()
+    cache = FORGOT_OTP_CACHE.get(student_id)
+    if not cache or not cache.get("verified"):
+        return jsonify({"status": "error", "message": "State access architecture violation blocked!"})
+    hashed = generate_password_hash(new_password)
+    conn = sqlite3.connect('bcet_production.db')
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET password_hash=? WHERE student_id=?", (hashed, student_id))
+    conn.commit()
+    conn.close()
+    FORGOT_OTP_CACHE.pop(student_id, None)
+    return jsonify({"status": "success", "message": "Secret password allocation overridden successfully!"})
+
+@app.route('/', strict_slashes=False)
+def index():
+    if 'user_id' not in session or not session.get('token_verified'):
+        return redirect(url_for('signup_page'))
 
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
@@ -406,193 +552,15 @@ def index():
                            settings=current_settings,
                            election_status=status)
 
-@app.route('/auth_token_display')
-def auth_token_display():
-    if 'user_id' not in session:
-        return redirect(url_for('login_page'))
-    
-    sid = session['user_id']
-    raw_data = f"{sid}{time.time()}{app.secret_key}"
-    blockchain_token = hashlib.sha256(raw_data.encode()).hexdigest().upper()[:12]
-    
-    session['binding_signature'] = hashlib.sha256(f"{sid}{get_client_ip()}{blockchain_token}".encode()).hexdigest()
-    session['generated_token'] = blockchain_token
-    session['token_verified'] = False 
-    return render_template('auth_token_display.html', token=blockchain_token)
-
-@app.route('/verify_token_page')
-def verify_token_page():
-    if 'user_id' not in session:
-        return redirect(url_for('login_page'))
-    return render_template('token_verification_input.html')
-
-@app.route('/verify_token', methods=['POST'])
-def verify_token():
-    user_input = sanitize_input(request.form.get('input_token', '')).upper()
-    actual_token = session.get('generated_token')
-
-    if user_input and user_input == actual_token:
-        session['token_verified'] = True
-        return redirect(url_for('index'))
-    else:
-        consensus_blockchain.log_intrusion(session.get('user_id'), "Token Guard Exception Triggered", get_client_ip())
-        return render_template('token_verification_input.html', error="Invalid Token!")
-
-@app.route('/signup_page')
-def signup_page():
-    return render_template('signup.html')
-
-@app.route('/send_signup_otp', methods=['POST'])
-def send_signup_otp():
-    student_id = sanitize_input(request.form.get('student_id', '')).upper()
-    password = request.form.get('password', '').strip()
-
-    conn = sqlite3.connect('bcet_production.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT email FROM whitelist_registry WHERE student_id=?", (student_id,))
-    row = cursor.fetchone()
-    
-    if not row:
-        conn.close()
-        consensus_blockchain.log_intrusion(student_id, "Non-Whitelisted Database Intrusion Attempt", get_client_ip())
-        return jsonify({"status": "error", "message": "ID not authorized by BCET Database Registry!"})
-    
-    registered_email = row[0]
-
-    cursor.execute("SELECT student_id FROM users WHERE student_id=?", (student_id,))
-    if cursor.fetchone():
-        conn.close()
-        return jsonify({"status": "error", "message": "Already registered! Log in directly."})
-    conn.close()
-
-    otp = str(random.randint(100021, 999989))
-    display_masked_email = mask_email(registered_email)
-
-    if send_secure_otp_email(registered_email, otp, "Account Registration Gate"):
-        SIGNUP_OTP_CACHE[student_id] = {
-            "otp": otp, "email": registered_email, "password_hash": generate_password_hash(password),
-            "expires": time.time() + 300
-        }
-        return jsonify({
-            "status": "success", 
-            "message": f"Verification OTP sent to your registered email: {display_masked_email}"
-        })
-    else:
-        return jsonify({
-            "status": "error", 
-            "message": "Email Transmission Failed! Brevo Key might be expired, scanned, or Daily Quota Limit Exceeded."
-        })
-
-@app.route('/verify_signup_otp', methods=['POST'])
-def verify_signup_otp():
-    student_id = sanitize_input(request.form.get('student_id', '')).upper()
-    user_otp = sanitize_input(request.form.get('otp', '')).strip()
-
-    cache = SIGNUP_OTP_CACHE.get(student_id)
-    if not cache or time.time() > cache["expires"]:
-        return jsonify({"status": "error", "message": "OTP Expired or Invalid Session Key!"})
-
-    if cache["otp"] == user_otp:
-        try:
-            conn = sqlite3.connect('bcet_production.db')
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO users VALUES (?, ?, ?)", (student_id, cache["email"], cache["password_hash"]))
-            conn.commit()
-            conn.close()
-            SIGNUP_OTP_CACHE.pop(student_id, None)
-            return jsonify({"status": "success", "message": "Account created successfully!"})
-        except sqlite3.Error:
-            return jsonify({"status": "error", "message": "Database Lockout Error."})
-    else:
-        consensus_blockchain.log_intrusion(student_id, "Fraudulent Account Verification OTP Code Defect", get_client_ip())
-        return jsonify({"status": "error", "message": "Incorrect OTP Verification Code!"})
-
-@app.route('/login', methods=['POST'])
-def login():
-    student_id = sanitize_input(request.form.get('student_id', '')).upper()
-    password = request.form.get('password', '').strip()
-    client_ip = get_client_ip()
-
-    if FAILED_ATTEMPTS.get(client_ip, 0) >= MAX_FAILED_ATTEMPTS:
-        consensus_blockchain.log_intrusion(student_id, "Brute Force Threshold Breached", client_ip)
-        return "<h1>IP blocked temporarily due to excessive failures.</h1>", 423
-
-    conn = sqlite3.connect('bcet_production.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT password_hash FROM users WHERE student_id=?", (student_id,))
-    user = cursor.fetchone()
-    conn.close()
-
-    if user and check_password_hash(user[0], password):
-        FAILED_ATTEMPTS[client_ip] = 0 
-        session.permanent = True
-        session['user_id'] = student_id
-        session['user_ip'] = client_ip 
-        session['token_verified'] = False
-        return redirect(url_for('auth_token_display'))
-    
-    FAILED_ATTEMPTS[client_ip] = FAILED_ATTEMPTS.get(client_ip, 0) + 1
-    consensus_blockchain.log_intrusion(student_id, f"Failed Node Authentication ({FAILED_ATTEMPTS[client_ip]}/{MAX_FAILED_ATTEMPTS})", client_ip)
-    return render_template('login_error.html')
-
-@app.route('/forgot_password_page')
-def forgot_password_page():
-    return render_template('forgot_password.html')
-
-@app.route('/send_forgot_otp', methods=['POST'])
-def send_forgot_otp():
-    student_id = sanitize_input(request.form.get('student_id', '')).upper()
-    email = sanitize_input(request.form.get('email', '')).lower()
-    conn = sqlite3.connect('bcet_production.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT email FROM users WHERE student_id=?", (student_id,))
-    user = cursor.fetchone()
-    conn.close()
-    if not user or user[0] != email:
-        return jsonify({"status": "error", "message": "Credentials mismatch mapping!"})
-    otp = str(random.randint(100021, 999989))
-    FORGOT_OTP_CACHE[student_id] = {"otp": otp, "expires": time.time() + 300, "verified": False}
-    if send_secure_otp_email(email, otp, "Password Reset Protocol"):
-        return jsonify({"status": "success", "message": "Security recovery token pushed!"})
-    return jsonify({"status": "error", "message": "Email Dispatched Relay Mechanism Failed."})
-
-@app.route('/verify_forgot_code', methods=['POST'])
-def verify_forgot_code():
-    student_id = sanitize_input(request.form.get('student_id', '')).upper()
-    user_otp = sanitize_input(request.form.get('otp', '')).strip()
-    cache = FORGOT_OTP_CACHE.get(student_id)
-    if not cache or time.time() > cache["expires"]:
-        return jsonify({"status": "error", "message": "Token window session expired!"})
-    if cache["otp"] == user_otp:
-        FORGOT_OTP_CACHE[student_id]["verified"] = True
-        return jsonify({"status": "success", "message": "Security shield cleared!"})
-    return jsonify({"status": "error", "message": "Invalid security authentication code sequence."})
-
-@app.route('/commit_new_password', methods=['POST'])
-def commit_new_password():
-    student_id = sanitize_input(request.form.get('student_id', '')).upper()
-    new_password = request.form.get('password', '').strip()
-    cache = FORGOT_OTP_CACHE.get(student_id)
-    if not cache or not cache.get("verified"):
-        return jsonify({"status": "error", "message": "State access architecture violation blocked!"})
-    hashed = generate_password_hash(new_password)
-    conn = sqlite3.connect('bcet_production.db')
-    cursor = conn.cursor()
-    cursor.execute("UPDATE users SET password_hash=? WHERE student_id=?", (hashed, student_id))
-    conn.commit()
-    conn.close()
-    FORGOT_OTP_CACHE.pop(student_id, None)
-    return jsonify({"status": "success", "message": "Secret password allocation overridden successfully!"})
-
-@app.route('/logout')
+@app.route('/logout', strict_slashes=False)
 def logout():
     session.clear() 
-    return redirect(url_for('welcome'))
+    return redirect(url_for('signup_page'))
 
-@app.route('/cast_vote', methods=['POST'])
+@app.route('/cast_vote', methods=['POST'], strict_slashes=False)
 def cast_vote():
     if 'user_id' not in session or not session.get('token_verified'):
-        return redirect(url_for('welcome'))
+        return redirect(url_for('signup_page'))
     
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
@@ -613,7 +581,7 @@ def cast_vote():
         session.clear() 
         return render_template('already_cast.html')
 
-    time.sleep(1.5)
+    time.sleep(1.0)
     consensus_blockchain.nullifiers.add(nullifier)
     receipt_id = hashlib.sha256(str(time.time()).encode()).hexdigest().upper()[:12]
     
@@ -624,7 +592,7 @@ def cast_vote():
     session.clear() 
     return render_template('success.html', candidate=candidate, receipt=receipt_id, timestamp=datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S"))
 
-@app.route('/audit', methods=['GET', 'POST'])
+@app.route('/audit', methods=['GET', 'POST'], strict_slashes=False)
 def audit_portal():
     searched_id = sanitize_input(request.form.get('receipt', '')).upper()
     result = None
@@ -643,7 +611,7 @@ def audit_portal():
             if result: break
     return render_template('audit.html', searched_id=searched_id, result=result)
 
-# 🔥 STRICT SLASHES DISABLED ADMIN ROUTING MATRIX (Fixes Trailing Slashes & Query Param 404s)
+# 🔥 UNIVERSAL ADMIN PANEL ROUTING MATRIX
 
 @app.route('/admin-results', methods=['GET'], strict_slashes=False)
 @app.route('/admin-results/<path:secret>', methods=['GET'], strict_slashes=False)
