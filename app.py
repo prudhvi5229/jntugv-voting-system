@@ -53,8 +53,11 @@ def init_db():
     cursor.execute('''CREATE TABLE IF NOT EXISTS system_settings 
                       (key TEXT PRIMARY KEY, value TEXT)''')
     
-    cursor.execute("INSERT OR IGNORE INTO system_settings VALUES ('start_time', '2026-06-26T12:01')")
-    cursor.execute("INSERT OR IGNORE INTO system_settings VALUES ('end_time', '2026-06-28T02:01')")
+    now_str = datetime.now(IST).strftime("%Y-%m-%dT%H:%M")
+    future_str = (datetime.now(IST) + timedelta(days=7)).strftime("%Y-%m-%dT%H:%M")
+    
+    cursor.execute("INSERT OR IGNORE INTO system_settings VALUES ('start_time', ?)", (now_str,))
+    cursor.execute("INSERT OR IGNORE INTO system_settings VALUES ('end_time', ?)", (future_str,))
     cursor.execute("INSERT OR IGNORE INTO system_settings VALUES ('is_active', '1')")
     
     conn.commit()
@@ -338,11 +341,11 @@ def index():
     cursor = conn.cursor()
     cursor.execute("SELECT value FROM system_settings WHERE key='start_time'")
     db_start_row = cursor.fetchone()
-    db_start = db_start_row[0] if db_start_row else "2026-06-26T12:01"
+    db_start = db_start_row[0] if db_start_row else datetime.now(IST).strftime("%Y-%m-%dT%H:%M")
 
     cursor.execute("SELECT value FROM system_settings WHERE key='end_time'")
     db_end_row = cursor.fetchone()
-    db_end = db_end_row[0] if db_end_row else "2026-06-28T02:01"
+    db_end = db_end_row[0] if db_end_row else (datetime.now(IST) + timedelta(days=7)).strftime("%Y-%m-%dT%H:%M")
 
     cursor.execute("SELECT value FROM system_settings WHERE key='is_active'")
     db_active_row = cursor.fetchone()
@@ -359,22 +362,25 @@ def index():
     now = datetime.now(IST)
     
     def parse_election_time(time_str):
-        if "-" not in time_str:
+        try:
+            if "T" in time_str:
+                return datetime.strptime(time_str, "%Y-%m-%dT%H:%M").replace(tzinfo=IST)
+            elif "-" in time_str:
+                return datetime.strptime(time_str, "%Y-%m-%d %H:%M").replace(tzinfo=IST)
             return datetime.strptime(time_str, "%Y%m%dT%H:%M").replace(tzinfo=IST)
-        return datetime.strptime(time_str, "%Y-%m-%dT%H:%M").replace(tzinfo=IST)
+        except Exception:
+            return None
 
-    try:
-        start = parse_election_time(db_start)
-        end = parse_election_time(db_end)
-    except Exception:
-        start = now - timedelta(days=1)
-        end = now + timedelta(days=1)
+    start = parse_election_time(db_start)
+    end = parse_election_time(db_end)
     
     status = "OPEN"
-    if not db_active or now > end:
+    if not db_active:
         status = "CLOSED"
-    elif now < start:
+    elif start and now < start:
         status = "NOT_STARTED"
+    elif end and now > end:
+        status = "CLOSED"
     
     return render_template('index.html', 
                            candidate_list=ELECTION_SETTINGS["candidates"], 
@@ -417,7 +423,6 @@ def verify_token():
 def signup_page():
     return render_template('signup.html')
 
-# 🔥 NO EMAIL CALLS - DIRECT POPUP DISPLAY
 @app.route('/send_signup_otp', methods=['POST'], strict_slashes=False)
 def send_signup_otp():
     student_id = sanitize_input(request.form.get('student_id', '')).upper()
@@ -630,7 +635,25 @@ def admin_results(secret=None):
     for c in ELECTION_SETTINGS["candidates"]:
         tally = consensus_blockchain.verify_consensus_and_tally(c['name'])
         vote_counts[c['name']] = "🔴 LOCKOUT ACTIVE" if tally == -999 else tally
-    return render_template('results.html', settings=ELECTION_SETTINGS, vote_counts=vote_counts, logs=consensus_blockchain.security_logs, secret=ADMIN_SECRET, secret_key=ADMIN_SECRET)
+
+    conn = sqlite3.connect('bcet_production.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT value FROM system_settings WHERE key='start_time'")
+    r_start = cursor.fetchone()
+    cursor.execute("SELECT value FROM system_settings WHERE key='end_time'")
+    r_end = cursor.fetchone()
+    cursor.execute("SELECT value FROM system_settings WHERE key='is_active'")
+    r_active = cursor.fetchone()
+    conn.close()
+
+    current_settings = {
+        "candidates": ELECTION_SETTINGS["candidates"],
+        "start_time": r_start[0] if r_start else "",
+        "end_time": r_end[0] if r_end else "",
+        "is_active": (r_active[0] == '1') if r_active else True
+    }
+
+    return render_template('results.html', settings=current_settings, vote_counts=vote_counts, logs=consensus_blockchain.security_logs, secret=ADMIN_SECRET, secret_key=ADMIN_SECRET)
 
 @app.route('/admin/voter-registry', methods=['GET'], strict_slashes=False)
 @app.route('/admin/voter-registry/<path:secret>', methods=['GET'], strict_slashes=False)

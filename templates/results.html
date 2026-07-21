@@ -345,11 +345,11 @@
             <span></span>
             <span></span>
         </div>
-        <!-- FIXED: Appended Cache-Busting Tokens explicitly to force clean loads -->
+        <!-- FIXED: Clean Admin Links using template variables -->
         <div class="burger-dropdown-content" id="burgerMenuDropdownContainer">
             <a href="/">🏠 Home Dashboard</a>
-            <a href="/admin/security-audit/{{ settings.admin_secret }}?v=2026">🛡️ Security Core Audit Page</a>
-            <a href="/admin/factory-reset/{{ settings.admin_secret }}?v=2026">⚙️ Voter Node Factory Reset</a>
+            <a href="/admin/security-audit/{{ secret_key }}">🛡️ Security Core Audit Page</a>
+            <a href="/admin/factory-reset/{{ secret_key }}">⚙️ Voter Node Factory Reset</a>
         </div>
     </div>
     <button class="theme-toggle-btn" onclick="toggleSystemTheme()">🌓 Toggle Theme</button>
@@ -364,7 +364,7 @@
                     <h1>BCET Control Hub</h1>
                     <p>Cryptographic Node: Active</p>
                 </div>
-                <a href="/download-results/{{ settings.admin_secret }}" class="btn" style="background: var(--btn-success); text-decoration: none; line-height: 1.2;">
+                <a href="/download-results/{{ secret_key }}" class="btn" style="background: var(--btn-success); text-decoration: none; line-height: 1.2;">
                     📥 Export PDF Report
                 </a>
             </div>
@@ -439,7 +439,7 @@
         <div style="border: 2px dashed #10b981; border-radius: 12px; padding: 16px; background: rgba(16, 185, 129, 0.02); box-sizing: border-box;">
             <h4 style="margin: 0 0 8px 0; color: #10b981; font-weight: 800; font-size: 0.9rem;">⚙️ Whitelist Node Control</h4>
             <p style="margin: 0 0 14px 0; font-size: 0.75rem; color: var(--text-sub); line-height: 1.4;">Open the full screen manager node page to copy, paste, add or remove authorized student hall tickets.</p>
-            <a href="/admin/voter-registry/{{ settings.admin_secret }}?v=2026" class="btn" style="background: var(--btn-success); font-size: 0.75rem; padding: 8px 14px; text-decoration: none; display: inline-block;">
+            <a href="/admin/voter-registry/{{ secret_key }}" class="btn" style="background: var(--btn-success); font-size: 0.75rem; padding: 8px 14px; text-decoration: none; display: inline-block;">
                 Open Voter Registry Control Page
             </a>
         </div>
@@ -480,7 +480,7 @@
     }
 
     function bootControlPanel() {
-        const totalBallots = Object.values(electionConfig.voteCounts).reduce((a, b) => a + b, 0);
+        const totalBallots = Object.values(electionConfig.voteCounts).reduce((a, b) => (typeof b === 'number' ? a + b : a), 0);
         document.getElementById('total-votes').innerText = totalBallots;
         document.getElementById('block-count').innerText = totalBallots + 1; 
         
@@ -492,7 +492,7 @@
         wrapper.innerHTML = "";
 
         electionConfig.candidates.forEach((candidate, index) => {
-            const votes = electionConfig.voteCounts[candidate.name] || 0;
+            const votes = typeof electionConfig.voteCounts[candidate.name] === 'number' ? electionConfig.voteCounts[candidate.name] : 0;
             const percentage = totalBallots > 0 ? Math.round((votes / totalBallots) * 100) : 0;
 
             const row = document.createElement('div');
@@ -563,7 +563,7 @@
     function addNewCandidateRow() {
         synchronizeLocalConfigStates();
         electionConfig.candidates.push({ name: "", symbol: "", manifesto: "" });
-        const currentTotal = Object.values(electionConfig.voteCounts).reduce((a, b) => a + b, 0);
+        const currentTotal = Object.values(electionConfig.voteCounts).reduce((a, b) => (typeof b === 'number' ? a + b : a), 0);
         renderCandidateMatrix(currentTotal);
     }
 
@@ -597,23 +597,35 @@
     function updateTimeWindow() {
         const start = document.getElementById('startTimeInput').value;
         const end = document.getElementById('endTimeInput').value;
+        if(!start || !end) {
+            alert("Please select both Start and End times.");
+            return;
+        }
         fetch('/update_timing', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ start, end })
+            body: JSON.stringify({ start: start, end: end })
         })
         .then(res => res.json())
         .then(data => {
-            if(data.status === "success") alert("Time thresholds aligned correctly!");
+            if(data.status === "success") {
+                alert("Time thresholds aligned correctly!");
+                window.location.reload();
+            }
         });
     }
 
     function emergencyShutdown() {
-        fetch('/stop_election', { method: 'POST' })
-        .then(res => res.json())
-        .then(data => {
-            if(data.status === "success") alert("LOCKOUT ACTIVATED.");
-        });
+        if(confirm("Are you sure you want to trigger emergency lock?")) {
+            fetch('/stop_election', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "success") {
+                    alert("LOCKOUT ACTIVATED.");
+                    window.location.reload();
+                }
+            });
+        }
     }
 
     function resetBlockchainState() {
