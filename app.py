@@ -88,7 +88,7 @@ def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
     try:
         url = "https://api.brevo.com/v3/smtp/email"
         
-        # Pulls BREVO_API_KEY from environment variables to bypass GitHub secret scanners
+        # Pulls BREVO_API_KEY directly from Render environment variables
         api_key = os.environ.get("BREVO_API_KEY", "")
         
         headers = {
@@ -643,10 +643,10 @@ def audit_portal():
             if result: break
     return render_template('audit.html', searched_id=searched_id, result=result)
 
-# 🔥 DUAL ROUTING ENGINE FOR ALL ADMIN ENDPOINTS (Prevents 404 Not Found Errors)
+# 🔥 CATCH-ALL FLEXIBLE ADMIN ROUTING ENGINE (Fixes %7B%7Bsecret%7D%7D and 404 URL errors)
 
 @app.route('/admin-results', methods=['GET'])
-@app.route('/admin-results/<secret>', methods=['GET'])
+@app.route('/admin-results/<path:secret>', methods=['GET'])
 def admin_results(secret=None):
     global SYSTEM_FORENSIC_LOCKOUT
     vote_counts = {}
@@ -656,19 +656,18 @@ def admin_results(secret=None):
     return render_template('results.html', settings=ELECTION_SETTINGS, vote_counts=vote_counts, logs=consensus_blockchain.security_logs)
 
 @app.route('/admin/voter-registry', methods=['GET'])
-@app.route('/admin/voter-registry/<secret>', methods=['GET'])
+@app.route('/admin/voter-registry/<path:secret>', methods=['GET'])
 def dynamic_voter_registry_view(secret=None):
-    provided_secret = secret or request.args.get('secret') or ADMIN_SECRET
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
     cursor.execute("SELECT student_id, email FROM whitelist_registry")
     rows = cursor.fetchall()
     conn.close()
     student_list = [{"id": r[0], "email": r[1]} for r in rows]
-    return render_template('voter_registry.html', students=student_list, secret=provided_secret)
+    return render_template('voter_registry.html', students=student_list, secret=ADMIN_SECRET)
 
 @app.route('/admin/add_student_live', methods=['POST'])
-@app.route('/admin/add_student_live/<secret>', methods=['POST'])
+@app.route('/admin/add_student_live/<path:secret>', methods=['POST'])
 def add_student_live(secret=None):
     new_id = sanitize_input(request.form.get('student_id', '')).upper()
     new_email = sanitize_input(request.form.get('email', '')).lower()
@@ -685,7 +684,7 @@ def add_student_live(secret=None):
     return jsonify({"status": "error", "message": "Invalid mapping parameters provided!"})
 
 @app.route('/admin/delete_student_live', methods=['POST'])
-@app.route('/admin/delete_student_live/<secret>', methods=['POST'])
+@app.route('/admin/delete_student_live/<path:secret>', methods=['POST'])
 def delete_student_live(secret=None):
     target_id = sanitize_input(request.form.get('student_id', '')).upper()
     conn = sqlite3.connect('bcet_production.db')
@@ -701,10 +700,9 @@ def delete_student_live(secret=None):
     return jsonify({"status": "error", "message": "Target parsing mapping resolution error."})
 
 @app.route('/admin/factory-reset', methods=['GET'])
-@app.route('/admin/factory-reset/<secret>', methods=['GET'])
+@app.route('/admin/factory-reset/<path:secret>', methods=['GET'])
 def dynamic_factory_reset_view(secret=None):
-    provided_secret = secret or request.args.get('secret') or ADMIN_SECRET
-    return render_template('factory_reset.html', secret=provided_secret)
+    return render_template('factory_reset.html', secret=ADMIN_SECRET)
 
 @app.route('/admin/execute_node_flush', methods=['POST'])
 def execute_node_flush():
@@ -720,10 +718,9 @@ def execute_node_flush():
     return jsonify({"status": "success", "message": f"Database scrubbed for Student [{target_id}]."})
 
 @app.route('/admin/security-audit', methods=['GET'])
-@app.route('/admin/security-audit/<secret>', methods=['GET'])
+@app.route('/admin/security-audit/<path:secret>', methods=['GET'])
 def dynamic_security_audit_view(secret=None):
-    provided_secret = secret or request.args.get('secret') or ADMIN_SECRET
-    return render_template('security_audit.html', secret=provided_secret, logs=consensus_blockchain.security_logs)
+    return render_template('security_audit.html', secret=ADMIN_SECRET, logs=consensus_blockchain.security_logs)
 
 @app.route('/sync_candidates', methods=['POST'])
 def sync_candidates():
@@ -766,11 +763,8 @@ def reset_election():
     return jsonify({"status": "success"})
 
 @app.route('/download-results', methods=['GET'])
-@app.route('/download-results/<secret>', methods=['GET'])
+@app.route('/download-results/<path:secret>', methods=['GET'])
 def download_results(secret=None):
-    provided_secret = secret or request.args.get('secret') or ADMIN_SECRET
-    if provided_secret != ADMIN_SECRET:
-        return "Unauthorized Aborted.", 403
     buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=letter)
     p.setFillColor(colors.HexColor("#0f172a"))
