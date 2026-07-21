@@ -16,7 +16,7 @@ from flask import Flask, render_template, request, jsonify, make_response, url_f
 try:
     import psycopg2
     HAS_POSTGRES = True
-except ImportError:
+except Exception as e:
     HAS_POSTGRES = False
 
 # PDF Libraries
@@ -46,12 +46,16 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
 def get_db_connection():
     if DATABASE_URL and HAS_POSTGRES:
-        url = DATABASE_URL
-        if url.startswith("postgres://"):
-            url = url.replace("postgres://", "postgresql://", 1)
-        conn = psycopg2.connect(url)
-        conn.autocommit = True  # Ensures instant database commit
-        return conn, "postgres"
+        try:
+            url = DATABASE_URL.strip()
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql://", 1)
+            conn = psycopg2.connect(url)
+            conn.autocommit = True
+            return conn, "postgres"
+        except Exception:
+            conn = sqlite3.connect('bcet_production.db')
+            return conn, "sqlite"
     else:
         conn = sqlite3.connect('bcet_production.db')
         return conn, "sqlite"
@@ -88,10 +92,11 @@ def init_db():
             now_str = datetime.now(IST).strftime("%Y-%m-%dT%H:%M")
             future_str = (datetime.now(IST) + timedelta(days=7)).strftime("%Y-%m-%dT%H:%M")
             
-            cursor.execute("DELETE FROM system_settings WHERE key IN ('start_time', 'end_time', 'is_active')")
-            cursor.execute("INSERT INTO system_settings (key, value) VALUES ('start_time', %s)", (now_str,))
-            cursor.execute("INSERT INTO system_settings (key, value) VALUES ('end_time', %s)", (future_str,))
-            cursor.execute("INSERT INTO system_settings (key, value) VALUES ('is_active', '1')")
+            cursor.execute("SELECT key FROM system_settings WHERE key='start_time'")
+            if not cursor.fetchone():
+                cursor.execute("INSERT INTO system_settings (key, value) VALUES ('start_time', %s)", (now_str,))
+                cursor.execute("INSERT INTO system_settings (key, value) VALUES ('end_time', %s)", (future_str,))
+                cursor.execute("INSERT INTO system_settings (key, value) VALUES ('is_active', '1')")
         else:
             cursor.execute('''CREATE TABLE IF NOT EXISTS users 
                               (student_id TEXT PRIMARY KEY, email TEXT, password_hash TEXT)''')
