@@ -734,8 +734,8 @@ def sync_candidates():
 @app.route('/update_timing', methods=['POST'], strict_slashes=False)
 def update_timing():
     data = request.json
-    start_val = sanitize_input(data['start'])
-    end_val = sanitize_input(data['end'])
+    start_val = sanitize_input(data.get('start', ''))
+    end_val = sanitize_input(data.get('end', ''))
     
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
