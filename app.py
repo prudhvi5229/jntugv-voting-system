@@ -643,9 +643,8 @@ def audit_portal():
             if result: break
     return render_template('audit.html', searched_id=searched_id, result=result)
 
-# 🔥 FULLY MATCHED ADMIN PANEL BUTTON ROUTES (Fixes 404 Not Found on all 3 sub-buttons)
+# 🔥 UNIVERSAL ADMIN PANEL ROUTING MATRIX (Fixes 404 for all buttons cleanly)
 
-# 1. Main Dashboard Results Route
 @app.route('/admin-results', methods=['GET'])
 @app.route('/admin-results/<path:secret>', methods=['GET'])
 @app.route('/admin/results', methods=['GET'])
@@ -656,9 +655,8 @@ def admin_results(secret=None):
     for c in ELECTION_SETTINGS["candidates"]:
         tally = consensus_blockchain.verify_consensus_and_tally(c['name'])
         vote_counts[c['name']] = "🔴 LOCKOUT ACTIVE" if tally == -999 else tally
-    return render_template('results.html', settings=ELECTION_SETTINGS, vote_counts=vote_counts, logs=consensus_blockchain.security_logs)
+    return render_template('results.html', settings=ELECTION_SETTINGS, vote_counts=vote_counts, logs=consensus_blockchain.security_logs, secret=ADMIN_SECRET, secret_key=ADMIN_SECRET)
 
-# 2. Open Voter Registry Control Page Button Route
 @app.route('/admin/voter-registry', methods=['GET'])
 @app.route('/admin/voter-registry/<path:secret>', methods=['GET'])
 def dynamic_voter_registry_view(secret=None):
@@ -668,7 +666,7 @@ def dynamic_voter_registry_view(secret=None):
     rows = cursor.fetchall()
     conn.close()
     student_list = [{"id": r[0], "email": r[1]} for r in rows]
-    return render_template('voter_registry.html', students=student_list, secret=ADMIN_SECRET)
+    return render_template('voter_registry.html', students=student_list, secret=ADMIN_SECRET, secret_key=ADMIN_SECRET)
 
 @app.route('/admin/add_student_live', methods=['POST'])
 @app.route('/admin/add_student_live/<path:secret>', methods=['POST'])
@@ -703,11 +701,10 @@ def delete_student_live(secret=None):
     conn.close()
     return jsonify({"status": "error", "message": "Target parsing mapping resolution error."})
 
-# 3. Voter Node Factory Reset Button Route
 @app.route('/admin/factory-reset', methods=['GET'])
 @app.route('/admin/factory-reset/<path:secret>', methods=['GET'])
 def dynamic_factory_reset_view(secret=None):
-    return render_template('factory_reset.html', secret=ADMIN_SECRET)
+    return render_template('factory_reset.html', secret=ADMIN_SECRET, secret_key=ADMIN_SECRET)
 
 @app.route('/admin/execute_node_flush', methods=['POST'])
 def execute_node_flush():
@@ -722,11 +719,10 @@ def execute_node_flush():
     conn.close()
     return jsonify({"status": "success", "message": f"Database scrubbed for Student [{target_id}]."})
 
-# 4. Security Core Audit Page Button Route
 @app.route('/admin/security-audit', methods=['GET'])
 @app.route('/admin/security-audit/<path:secret>', methods=['GET'])
 def dynamic_security_audit_view(secret=None):
-    return render_template('security_audit.html', secret=ADMIN_SECRET, logs=consensus_blockchain.security_logs)
+    return render_template('security_audit.html', secret=ADMIN_SECRET, secret_key=ADMIN_SECRET, logs=consensus_blockchain.security_logs)
 
 @app.route('/sync_candidates', methods=['POST'])
 def sync_candidates():
