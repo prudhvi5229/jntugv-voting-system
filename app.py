@@ -45,15 +45,20 @@ SYSTEM_FORENSIC_LOCKOUT = False
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
 def get_db_connection():
-    if DATABASE_URL and HAS_POSTGRES:
-        try:
-            url = DATABASE_URL.strip()
-            if url.startswith("postgres://"):
-                url = url.replace("postgres://", "postgresql://", 1)
-            conn = psycopg2.connect(url)
-            conn.autocommit = True
-            return conn, "postgres"
-        except Exception:
+    if DATABASE_URL:
+        url = DATABASE_URL.strip()
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql://", 1)
+        if HAS_POSTGRES:
+            try:
+                conn = psycopg2.connect(url, sslmode='require')
+                conn.autocommit = True
+                return conn, "postgres"
+            except Exception as err:
+                print(f"Postgres Direct Error: {err}")
+                conn = sqlite3.connect('bcet_production.db')
+                return conn, "sqlite"
+        else:
             conn = sqlite3.connect('bcet_production.db')
             return conn, "sqlite"
     else:
