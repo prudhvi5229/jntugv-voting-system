@@ -45,20 +45,17 @@ SYSTEM_FORENSIC_LOCKOUT = False
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
 def get_db_connection():
-    if DATABASE_URL:
-        url = DATABASE_URL.strip()
-        if url.startswith("postgres://"):
-            url = url.replace("postgres://", "postgresql://", 1)
-        if HAS_POSTGRES:
-            try:
-                conn = psycopg2.connect(url, sslmode='require')
-                conn.autocommit = True
-                return conn, "postgres"
-            except Exception as err:
-                print(f"Postgres Direct Error: {err}")
-                conn = sqlite3.connect('bcet_production.db')
-                return conn, "sqlite"
-        else:
+    if DATABASE_URL and HAS_POSTGRES:
+        try:
+            url = DATABASE_URL.strip()
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql://", 1)
+            # Fix: Pass url directly without duplicating sslmode kwarg
+            conn = psycopg2.connect(url)
+            conn.autocommit = True
+            return conn, "postgres"
+        except Exception as err:
+            print(f"Postgres Connection Error: {err}")
             conn = sqlite3.connect('bcet_production.db')
             return conn, "sqlite"
     else:
@@ -80,6 +77,7 @@ def init_db():
     try:
         conn, db_type = get_db_connection()
         cursor = conn.cursor()
+        print(f"DATABASE INITIALIZED WITH ENGINE: {db_type.upper()}")
         
         if db_type == "postgres":
             cursor.execute('''CREATE TABLE IF NOT EXISTS users 
@@ -146,7 +144,6 @@ def mask_email(email_str):
     except Exception:
         return "your registered email"
 
-# --- TRI-NODE CRYPTOGRAPHIC BLOCKCHAIN ENGINE ---
 class CryptographicNode:
     def __init__(self, node_id):
         self.node_id = node_id
