@@ -12,17 +12,17 @@ import os
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, jsonify, make_response, url_for, session, redirect
 
-# PDF Libraries
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
-
 # PostgreSQL Driver Import
 try:
     import psycopg2
     HAS_POSTGRES = True
 except ImportError:
     HAS_POSTGRES = False
+
+# PDF Libraries
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
 
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.secret_key = "BCET_BLOCKCHAIN_2026_SECURE_ULTRA_PRO_MAX_Z_PLUS_DEEPCORE_IMMUTABLE_HARSH"
@@ -32,11 +32,9 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 IST = pytz.timezone('Asia/Kolkata')
 ADMIN_SECRET = "BCET_ADMIN_PRO" 
 
-# --- VOLATILE OTP MEMORY MATRIX ---
 SIGNUP_OTP_CACHE = {}  
 FORGOT_OTP_CACHE = {}  
 
-# --- ADVANCED SECURITY MEMORY MATRIX ---
 FAILED_ATTEMPTS = {} 
 MAX_FAILED_ATTEMPTS = 5
 RATE_LIMIT_TRACKER = {} 
@@ -46,14 +44,13 @@ SYSTEM_FORENSIC_LOCKOUT = False
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
-# --- DATABASE CONNECTION WRAPPER (POSTGRES / SQLITE FALLBACK) ---
 def get_db_connection():
     if DATABASE_URL and HAS_POSTGRES:
         url = DATABASE_URL
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
         conn = psycopg2.connect(url)
-        conn.autocommit = True  # 🔥 CRITICAL FIX: Ensures live updates persist instantly
+        conn.autocommit = True  # 🔥 INSTANT SAVE TO NEON DB
         return conn, "postgres"
     else:
         conn = sqlite3.connect('bcet_production.db')
@@ -291,7 +288,7 @@ def api_admin_upload_biometrics():
     face_vector_str = json.dumps(face_vector_raw) if face_vector_raw else None
     try:
         if db_type == "postgres":
-            cursor.execute("INSERT INTO android_biometrics VALUES (%s, %s, %s) ON CONFLICT (student_id) DO UPDATE SET fingerprint_data = EXCLUDED.fingerprint_data, face_vector = EXCLUDED.face_vector", (student_id, fingerprint_raw, face_vector_str))
+            cursor.execute("INSERT INTO android_biometrics VALUES (%s, %s, %s) ON CONFLICT (student_id) DO UPDATE SET fingerprint_data=EXCLUDED.fingerprint_data, face_vector=EXCLUDED.face_vector", (student_id, fingerprint_raw, face_vector_str))
         else:
             cursor.execute("INSERT OR REPLACE INTO android_biometrics VALUES (?, ?, ?)", (student_id, fingerprint_raw, face_vector_str))
             conn.commit()
@@ -410,16 +407,16 @@ def index():
     db_end_row = cursor.fetchone()
     cursor.execute("SELECT value FROM system_settings WHERE key='is_active'")
     db_active_row = cursor.fetchone()
-    conn.close()
 
     db_start = db_start_row[0] if db_start_row else datetime.now(IST).strftime("%Y-%m-%dT%H:%M")
     db_end = db_end_row[0] if db_end_row else (datetime.now(IST) + timedelta(days=7)).strftime("%Y-%m-%dT%H:%M")
     db_active = (db_active_row[0] == '1') if db_active_row else True
+    conn.close()
 
     current_settings = {
         "candidates": ELECTION_SETTINGS["candidates"],
-        "start_time": format_datetime_for_input(db_start),
-        "end_time": format_datetime_for_input(db_end),
+        "start_time": db_start,
+        "end_time": db_end,
         "is_active": db_active
     }
 
@@ -427,9 +424,7 @@ def index():
     
     def parse_election_time(time_str):
         try:
-            clean_str = str(time_str).strip().replace("T", " ")
-            if len(clean_str) > 16:
-                clean_str = clean_str[:16]
+            clean_str = str(time_str).replace("T", " ")
             return datetime.strptime(clean_str, "%Y-%m-%d %H:%M").replace(tzinfo=IST)
         except Exception:
             return None
@@ -493,6 +488,7 @@ def send_signup_otp():
 
     conn, db_type = get_db_connection()
     cursor = conn.cursor()
+    
     if db_type == "postgres":
         cursor.execute("SELECT email FROM whitelist_registry WHERE student_id=%s", (student_id,))
     else:
@@ -709,7 +705,7 @@ def audit_portal():
             if result: break
     return render_template('audit.html', searched_id=searched_id, result=result)
 
-# --- ADMIN PANEL ROUTES ---
+# --- DYNAMIC ADMIN PANEL ROUTES ---
 
 @app.route('/admin-results', methods=['GET'], strict_slashes=False)
 @app.route('/admin-results/<path:secret>', methods=['GET'], strict_slashes=False)

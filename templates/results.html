@@ -610,6 +610,8 @@
             if(data.status === "success") {
                 alert("Time thresholds aligned correctly!");
                 window.location.reload();
+            } else {
+                alert("Error: " + (data.message || "Failed to update"));
             }
         });
     }
