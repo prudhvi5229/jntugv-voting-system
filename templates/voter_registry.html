@@ -3,65 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BCET - Voter Registry</title>
+    <title>BCET - Whitelist Voter Registry</title>
     <style>
-        body {
+        * {
+            box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        body {
             background-color: #0f172a;
             color: #f8fafc;
-            margin: 0;
-            padding: 20px;
+            padding: 30px;
         }
         .container {
             max-width: 900px;
             margin: 0 auto;
-            background: #1e293b;
-            padding: 30px;
+            background-color: #1e293b;
+            padding: 25px;
             border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
         h2 {
             color: #38bdf8;
+            margin-bottom: 20px;
             border-bottom: 2px solid #334155;
             padding-bottom: 10px;
         }
-        .form-group {
+        .form-section {
             display: flex;
             gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+            margin-bottom: 25px;
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
         }
-        input[type="text"], input[type="email"] {
+        input {
             flex: 1;
-            min-width: 200px;
             padding: 12px;
             border-radius: 6px;
-            border: 1px solid #475569;
-            background-color: #0f172a;
-            color: #fff;
+            border: 1px solid #334155;
+            background: #1e293b;
+            color: white;
             font-size: 14px;
         }
-        input:focus {
-            outline: none;
-            border-color: #38bdf8;
-        }
         button {
-            padding: 12px 24px;
-            background-color: #0284c7;
+            padding: 12px 20px;
+            background: #0284c7;
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
-            transition: background 0.2s;
+            transition: 0.3s;
         }
         button:hover {
-            background-color: #0369a1;
+            background: #0369a1;
+        }
+        .delete-btn {
+            background: #ef4444;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        .delete-btn:hover {
+            background: #dc2626;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 15px;
         }
         th, td {
             padding: 12px;
@@ -69,60 +79,57 @@
             border-bottom: 1px solid #334155;
         }
         th {
-            background-color: #334155;
-            color: #38bdf8;
+            background-color: #0f172a;
+            color: #94a3b8;
         }
         tr:hover {
-            background-color: #2b394f;
-        }
-        .btn-delete {
-            background-color: #ef4444;
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-        .btn-delete:hover {
-            background-color: #dc2626;
+            background-color: #334155;
         }
         .alert {
-            padding: 12px;
-            border-radius: 6px;
+            padding: 10px;
             margin-bottom: 15px;
+            border-radius: 6px;
             display: none;
         }
-        .success { background-color: #16a34a; color: white; }
-        .error { background-color: #dc2626; color: white; }
+        .alert-success { background: #15803d; color: white; }
+        .alert-error { background: #b91c1c; color: white; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>BCET Voter Registry Management Portal</h2>
+    <h2>BCET Whitelist Voter Registry Dashboard</h2>
     
     <div id="alertBox" class="alert"></div>
 
-    <div class="form-group">
-        <input type="text" id="studentIdInput" placeholder="Enter Student Roll Number (e.g., 24V11A0522)">
-        <input type="email" id="studentEmailInput" placeholder="Enter Student Official Email">
-        <button onclick="addStudent()">Add Student Node</button>
+    <!-- Live Add Student Section -->
+    <div class="form-section">
+        <input type="text" id="new_student_id" placeholder="Student Hall Ticket Number (e.g. 24V11A0522)" required>
+        <input type="email" id="new_student_email" placeholder="Registered Email ID" required>
+        <button onclick="addStudent()">Add Student</button>
     </div>
 
-    <h3>Currently Authorized Whitelist Registry</h3>
+    <!-- Whitelisted Students Table -->
     <table>
         <thead>
             <tr>
-                <th>Student ID</th>
+                <th>Hall Ticket Number</th>
                 <th>Registered Email</th>
-                <th>Action Matrix</th>
+                <th>Action</th>
             </tr>
         </thead>
-        <tbody id="voterTableBody">
+        <tbody>
             {% for student in students %}
-            <tr id="row-{{ student.id }}">
+            <tr>
                 <td><strong>{{ student.id }}</strong></td>
                 <td>{{ student.email }}</td>
                 <td>
-                    <button class="btn-delete" onclick="deleteStudent('{{ student.id }}')">Remove Node</button>
+                    <button class="delete-btn" onclick="deleteStudent('{{ student.id }}')">Remove</button>
                 </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="3" style="text-align: center; color: #94a3b8;">No students whitelisted in database registry yet.</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -130,78 +137,68 @@
 </div>
 
 <script>
-function showAlert(message, type) {
-    const alertBox = document.getElementById('alertBox');
-    alertBox.textContent = message;
-    alertBox.className = `alert ${type}`;
-    alertBox.style.display = 'block';
-    setTimeout(() => { alertBox.style.display = 'none'; }, 4000);
-}
-
-function addStudent() {
-    const studentId = document.getElementById('studentIdInput').value.trim();
-    const email = document.getElementById('studentEmailInput').value.trim();
-
-    if (!studentId || !email) {
-        showAlert("Both Student ID and Email fields are strictly required!", "error");
-        return;
+    function showAlert(msg, isSuccess) {
+        const alertBox = document.getElementById('alertBox');
+        alertBox.innerText = msg;
+        alertBox.className = 'alert ' + (isSuccess ? 'alert-success' : 'alert-error');
+        alertBox.style.display = 'block';
+        setTimeout(() => { alertBox.style.display = 'none'; }, 4000);
     }
 
-    fetch('/admin/add_student_live', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `student_id=${encodeURIComponent(studentId)}&email=${encodeURIComponent(email)}`
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            showAlert(data.message, "success");
-            
-            const tbody = document.getElementById('voterTableBody');
-            const newRow = document.createElement('tr');
-            newRow.id = `row-${studentId.toUpperCase()}`;
-            newRow.innerHTML = `
-                <td><strong>${studentId.toUpperCase()}</strong></td>
-                <td>${email.toLowerCase()}</td>
-                <td>
-                    <button class="btn-delete" onclick="deleteStudent('${studentId.toUpperCase()}')">Remove Node</button>
-                </td>
-            `;
-            tbody.appendChild(newRow);
-            
-            document.getElementById('studentIdInput').value = '';
-            document.getElementById('studentEmailInput').value = '';
-        } else {
-            showAlert(data.message, "error");
-        }
-    })
-    .catch(error => showAlert("Network transmission failure!", "error"));
-}
+    function addStudent() {
+        const studentId = document.getElementById('new_student_id').value.trim();
+        const email = document.getElementById('new_student_email').value.trim();
 
-function deleteStudent(studentId) {
-    if (!confirm(`Are you absolutely sure you want to remove Node [${studentId}]?`)) return;
-
-    fetch('/admin/delete_student_live', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `student_id=${encodeURIComponent(studentId)}`
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            showAlert(data.message, "success");
-            const row = document.getElementById(`row-${studentId}`);
-            if (row) row.remove();
-        } else {
-            showAlert(data.message, "error");
+        if (!studentId || !email) {
+            showAlert("Please fill in both Student ID and Email!", false);
+            return;
         }
-    })
-    .catch(error => showAlert("Network database error.", "error"));
-}
+
+        const formData = new FormData();
+        formData.append('student_id', studentId);
+        formData.append('email', email);
+
+        fetch('/admin/add_student_live', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showAlert(data.message, true);
+                setTimeout(() => { location.reload(); }, 1000);
+            } else {
+                showAlert(data.message, false);
+            }
+        })
+        .catch(err => {
+            showAlert("Network communication failure!", false);
+        });
+    }
+
+    function deleteStudent(studentId) {
+        if (!confirm("Are you sure you want to delete Student " + studentId + " from whitelist?")) return;
+
+        const formData = new FormData();
+        formData.append('student_id', studentId);
+
+        fetch('/admin/delete_student_live', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showAlert(data.message, true);
+                setTimeout(() => { location.reload(); }, 1000);
+            } else {
+                showAlert(data.message, false);
+            }
+        })
+        .catch(err => {
+            showAlert("Network communication failure!", false);
+        });
+    }
 </script>
 
 </body>
