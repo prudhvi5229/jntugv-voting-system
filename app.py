@@ -50,12 +50,10 @@ def get_db_connection():
             url = DATABASE_URL.strip()
             if url.startswith("postgres://"):
                 url = url.replace("postgres://", "postgresql://", 1)
-            # Fix: Pass url directly without duplicating sslmode kwarg
             conn = psycopg2.connect(url)
-            conn.autocommit = True
             return conn, "postgres"
         except Exception as err:
-            print(f"Postgres Connection Error: {err}")
+            print(f"Postgres Connection Error: {err}", flush=True)
             conn = sqlite3.connect('bcet_production.db')
             return conn, "sqlite"
     else:
@@ -77,7 +75,6 @@ def init_db():
     try:
         conn, db_type = get_db_connection()
         cursor = conn.cursor()
-        print(f"DATABASE INITIALIZED WITH ENGINE: {db_type.upper()}")
         
         if db_type == "postgres":
             cursor.execute('''CREATE TABLE IF NOT EXISTS users 
@@ -100,6 +97,7 @@ def init_db():
                 cursor.execute("INSERT INTO system_settings (key, value) VALUES ('start_time', %s)", (now_str,))
                 cursor.execute("INSERT INTO system_settings (key, value) VALUES ('end_time', %s)", (future_str,))
                 cursor.execute("INSERT INTO system_settings (key, value) VALUES ('is_active', '1')")
+            conn.commit()
         else:
             cursor.execute('''CREATE TABLE IF NOT EXISTS users 
                               (student_id TEXT PRIMARY KEY, email TEXT, password_hash TEXT)''')
@@ -123,7 +121,7 @@ def init_db():
             
         conn.close()
     except Exception as e:
-        print(f"Database Init Exception: {e}")
+        print(f"Database Init Exception: {e}", flush=True)
 
 init_db()
 
@@ -298,6 +296,7 @@ def api_admin_upload_biometrics():
         if db_type == "postgres":
             cursor.execute("DELETE FROM android_biometrics WHERE student_id=%s", (student_id,))
             cursor.execute("INSERT INTO android_biometrics (student_id, fingerprint_data, face_vector) VALUES (%s, %s, %s)", (student_id, fingerprint_raw, face_vector_str))
+            conn.commit()  # 🔥 CRITICAL FIX
         else:
             cursor.execute("INSERT OR REPLACE INTO android_biometrics VALUES (?, ?, ?)", (student_id, fingerprint_raw, face_vector_str))
             conn.commit()
@@ -552,6 +551,7 @@ def verify_signup_otp():
                 cursor.execute("DELETE FROM users WHERE student_id=%s", (student_id,))
                 cursor.execute("INSERT INTO users (student_id, email, password_hash) VALUES (%s, %s, %s)", 
                                (student_id, cache["email"], cache["password_hash"]))
+                conn.commit()  # 🔥 CRITICAL FIX
             else:
                 cursor.execute("DELETE FROM users WHERE student_id=?", (student_id,))
                 cursor.execute("INSERT INTO users (student_id, email, password_hash) VALUES (?, ?, ?)", 
@@ -648,6 +648,7 @@ def commit_new_password():
     cursor = conn.cursor()
     if db_type == "postgres":
         cursor.execute("UPDATE users SET password_hash=%s WHERE student_id=%s", (hashed, student_id))
+        conn.commit()  # 🔥 CRITICAL FIX
     else:
         cursor.execute("UPDATE users SET password_hash=? WHERE student_id=?", (hashed, student_id))
         conn.commit()
@@ -772,6 +773,7 @@ def add_student_live(secret=None):
             if db_type == "postgres":
                 cursor.execute("DELETE FROM whitelist_registry WHERE student_id=%s", (new_id,))
                 cursor.execute("INSERT INTO whitelist_registry (student_id, email) VALUES (%s, %s)", (new_id, new_email))
+                conn.commit()  # 🔥 CRITICAL FIX: EXPLICIT COMMIT REQUIRED FOR POSTGRESQL!
             else:
                 cursor.execute("INSERT OR REPLACE INTO whitelist_registry VALUES (?, ?)", (new_id, new_email))
                 conn.commit()
@@ -793,6 +795,7 @@ def delete_student_live(secret=None):
         if exists:
             cursor.execute("DELETE FROM whitelist_registry WHERE student_id=%s", (target_id,))
             cursor.execute("DELETE FROM users WHERE student_id=%s", (target_id,))
+            conn.commit()  # 🔥 CRITICAL FIX
             conn.close()
             return jsonify({"status": "success", "message": f"Student [{target_id}] scrubbed permanently."})
     else:
@@ -822,6 +825,7 @@ def execute_node_flush():
     if db_type == "postgres":
         cursor.execute("DELETE FROM users WHERE student_id=%s", (target_id,))
         cursor.execute("DELETE FROM android_biometrics WHERE student_id=%s", (target_id,))
+        conn.commit()  # 🔥 CRITICAL FIX
     else:
         cursor.execute("DELETE FROM users WHERE student_id=?", (target_id,))
         cursor.execute("DELETE FROM android_biometrics WHERE student_id=?", (target_id,))
@@ -860,6 +864,7 @@ def update_timing():
             cursor.execute("INSERT INTO system_settings (key, value) VALUES ('start_time', %s)", (formatted_start,))
             cursor.execute("INSERT INTO system_settings (key, value) VALUES ('end_time', %s)", (formatted_end,))
             cursor.execute("INSERT INTO system_settings (key, value) VALUES ('is_active', '1')")
+            conn.commit()  # 🔥 CRITICAL FIX: EXPLICIT COMMIT REQUIRED FOR POSTGRESQL!
         else:
             cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('start_time', ?)", (formatted_start,))
             cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('end_time', ?)", (formatted_end,))
@@ -868,7 +873,7 @@ def update_timing():
         conn.close()
         return jsonify({"status": "success"})
     except Exception as e:
-        print(f"Timing Update Exception: {e}")
+        print(f"Timing Update Exception: {e}", flush=True)
         return jsonify({"status": "error", "message": str(e)})
 
 @app.route('/stop_election', methods=['POST'], strict_slashes=False)
@@ -878,6 +883,7 @@ def stop_election():
     if db_type == "postgres":
         cursor.execute("DELETE FROM system_settings WHERE key='is_active'")
         cursor.execute("INSERT INTO system_settings (key, value) VALUES ('is_active', '0')")
+        conn.commit()  # 🔥 CRITICAL FIX
     else:
         cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('is_active', '0')")
         conn.commit()
