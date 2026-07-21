@@ -7,7 +7,6 @@ from io import BytesIO
 import sqlite3
 import re
 import random
-import requests
 import numpy as np
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -25,7 +24,6 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 # --- CONFIGURATION ---
 IST = pytz.timezone('Asia/Kolkata')
 ADMIN_SECRET = "BCET_ADMIN_PRO" 
-SENDER_EMAIL = "beharacollegeofengineering@gmail.com"
 
 # --- VOLATILE OTP MEMORY MATRIX ---
 SIGNUP_OTP_CACHE = {}  
@@ -83,32 +81,6 @@ def mask_email(email_str):
         return f"{masked_name}@{domain}"
     except Exception:
         return "your registered email"
-
-def send_secure_otp_email(target_email, otp_code, purpose="Registration"):
-    try:
-        url = "https://api.brevo.com/v3/smtp/email"
-        api_key = os.environ.get("BREVO_API_KEY", "")
-        
-        headers = {
-            "accept": "application/json",
-            "api-key": api_key,
-            "content-type": "application/json"
-        }
-        payload = {
-            "sender": {"name": "BCET Gatekeeper", "email": SENDER_EMAIL},
-            "to": [{"email": target_email}],
-            "subject": f"Secure Gatekeeper - OTP for {purpose}",
-            "textContent": f"Hello Student,\n\nYour 6-Digit One-Time Password (OTP) for BCET Voting System {purpose} is: {otp_code}\n\nThis code is valid for 5 minutes only.\n\nRegards,\nBCET Blockchain Core Engine"
-        }
-        
-        response = requests.post(url, headers=headers, json=payload, timeout=8)
-        if response.status_code in [200, 201, 202]:
-            return True
-        print(f"Brevo API Failure Status {response.status_code}: {response.text}")
-        return False
-    except Exception as e:
-        print(f"Network Transmission API Error: {e}")
-        return False
 
 # --- TRI-NODE CRYPTOGRAPHIC BLOCKCHAIN ENGINE ---
 class CryptographicNode:
@@ -298,7 +270,7 @@ def api_biometric_login():
 
     if fingerprint_match or face_match:
         raw_token = f"{student_id}{time.time()}{app.secret_key}"
-        blockchain_token = hashlib.sha256(raw_data.encode()).hexdigest().upper()[:12]
+        blockchain_token = hashlib.sha256(raw_token.encode()).hexdigest().upper()[:12]
         
         session['active_voter'] = student_id
         session['vote_token'] = blockchain_token
@@ -365,11 +337,16 @@ def index():
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
     cursor.execute("SELECT value FROM system_settings WHERE key='start_time'")
-    db_start = cursor.fetchone()[0]
+    db_start_row = cursor.fetchone()
+    db_start = db_start_row[0] if db_start_row else "2026-06-26T12:01"
+
     cursor.execute("SELECT value FROM system_settings WHERE key='end_time'")
-    db_end = cursor.fetchone()[0]
+    db_end_row = cursor.fetchone()
+    db_end = db_end_row[0] if db_end_row else "2026-06-28T02:01"
+
     cursor.execute("SELECT value FROM system_settings WHERE key='is_active'")
-    db_active = cursor.fetchone()[0] == '1'
+    db_active_row = cursor.fetchone()
+    db_active = (db_active_row[0] == '1') if db_active_row else True
     conn.close()
 
     current_settings = {
@@ -440,6 +417,7 @@ def verify_token():
 def signup_page():
     return render_template('signup.html')
 
+# 🔥 NO EMAIL CALLS - DIRECT POPUP DISPLAY
 @app.route('/send_signup_otp', methods=['POST'], strict_slashes=False)
 def send_signup_otp():
     student_id = sanitize_input(request.form.get('student_id', '')).upper()
@@ -463,21 +441,18 @@ def send_signup_otp():
         return jsonify({"status": "error", "message": "Already registered! Log in directly."})
     conn.close()
 
-    otp = str(random.randint(100021, 999989))
-    display_masked_email = mask_email(registered_email)
+    random_dynamic_otp = str(random.randint(100000, 999999))
 
     SIGNUP_OTP_CACHE[student_id] = {
-        "otp": otp, 
+        "otp": random_dynamic_otp, 
         "email": registered_email, 
         "password_hash": generate_password_hash(password),
         "expires": time.time() + 300
     }
-
-    send_secure_otp_email(registered_email, otp, "Account Registration Gate")
     
     return jsonify({
         "status": "success", 
-        "message": f"Verification OTP sent to {display_masked_email}. Use OTP from Gmail or Master Bypass Key (123456)."
+        "message": f"🔑 YOUR OTP CODE IS: [{random_dynamic_otp}]"
     })
 
 @app.route('/verify_signup_otp', methods=['POST'], strict_slashes=False)
@@ -489,7 +464,7 @@ def verify_signup_otp():
     if not cache:
         return jsonify({"status": "error", "message": "Session expired or ID not found. Click Send OTP again!"})
 
-    if user_otp == "123456" or cache["otp"] == user_otp:
+    if cache["otp"] == user_otp:
         try:
             conn = sqlite3.connect('bcet_production.db')
             cursor = conn.cursor()
@@ -551,10 +526,10 @@ def send_forgot_otp():
     conn.close()
     if not user or user[0] != email:
         return jsonify({"status": "error", "message": "Credentials mismatch mapping!"})
-    otp = str(random.randint(100021, 999989))
-    FORGOT_OTP_CACHE[student_id] = {"otp": otp, "expires": time.time() + 300, "verified": False}
-    send_secure_otp_email(email, otp, "Password Reset Protocol")
-    return jsonify({"status": "success", "message": "Security recovery token pushed!"})
+    
+    random_dynamic_otp = str(random.randint(100000, 999999))
+    FORGOT_OTP_CACHE[student_id] = {"otp": random_dynamic_otp, "expires": time.time() + 300, "verified": False}
+    return jsonify({"status": "success", "message": f"🔑 YOUR OTP CODE IS: [{random_dynamic_otp}]"})
 
 @app.route('/verify_forgot_code', methods=['POST'], strict_slashes=False)
 def verify_forgot_code():
@@ -563,7 +538,7 @@ def verify_forgot_code():
     cache = FORGOT_OTP_CACHE.get(student_id)
     if not cache or time.time() > cache["expires"]:
         return jsonify({"status": "error", "message": "Token window session expired!"})
-    if user_otp == "123456" or cache["otp"] == user_otp:
+    if cache["otp"] == user_otp:
         FORGOT_OTP_CACHE[student_id]["verified"] = True
         return jsonify({"status": "success", "message": "Security shield cleared!"})
     return jsonify({"status": "error", "message": "Invalid security authentication code sequence."})
@@ -677,12 +652,12 @@ def add_student_live(secret=None):
         try:
             conn = sqlite3.connect('bcet_production.db')
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO whitelist_registry VALUES (?, ?)", (new_id, new_email))
+            cursor.execute("INSERT OR REPLACE INTO whitelist_registry VALUES (?, ?)", (new_id, new_email))
             conn.commit()
             conn.close()
             return jsonify({"status": "success", "message": f"Student Node [{new_id}] mapped successfully!"})
         except sqlite3.Error:
-            return jsonify({"status": "error", "message": "ID already exists in Database Whitelist!"})
+            return jsonify({"status": "error", "message": "ID mapping database error!"})
     return jsonify({"status": "error", "message": "Invalid mapping parameters provided!"})
 
 @app.route('/admin/delete_student_live', methods=['POST'], strict_slashes=False)
@@ -741,9 +716,9 @@ def update_timing():
     
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
-    cursor.execute("UPDATE system_settings SET value=? WHERE key='start_time'", (start_val,))
-    cursor.execute("UPDATE system_settings SET value=? WHERE key='end_time'", (end_val,))
-    cursor.execute("UPDATE system_settings SET value='1' WHERE key='is_active'")
+    cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('start_time', ?)", (start_val,))
+    cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('end_time', ?)", (end_val,))
+    cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('is_active', '1')")
     conn.commit()
     conn.close()
     return jsonify({"status": "success"})
@@ -752,7 +727,7 @@ def update_timing():
 def stop_election():
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
-    cursor.execute("UPDATE system_settings SET value='0' WHERE key='is_active'")
+    cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('is_active', '0')")
     conn.commit()
     conn.close()
     return jsonify({"status": "success"})
@@ -796,7 +771,7 @@ def download_results(secret=None):
     p.save()
     buffer.seek(0)
     response = make_response(buffer.getvalue())
-    response.headers['Content-Type'] = 'attachment; filename=BCET_Node_Report.pdf'
+    response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = f'attachment; filename=BCET_Node_Report_{datetime.now(IST).strftime("%Y%m%d")}.pdf'
     return response
 
