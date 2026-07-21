@@ -643,12 +643,12 @@ def audit_portal():
             if result: break
     return render_template('audit.html', searched_id=searched_id, result=result)
 
-# 🔥 UNIVERSAL ADMIN PANEL ROUTING MATRIX (Fixes 404 for all buttons cleanly)
+# 🔥 STRICT SLASHES DISABLED ADMIN ROUTING MATRIX (Fixes Trailing Slashes & Query Param 404s)
 
-@app.route('/admin-results', methods=['GET'])
-@app.route('/admin-results/<path:secret>', methods=['GET'])
-@app.route('/admin/results', methods=['GET'])
-@app.route('/admin/results/<path:secret>', methods=['GET'])
+@app.route('/admin-results', methods=['GET'], strict_slashes=False)
+@app.route('/admin-results/<path:secret>', methods=['GET'], strict_slashes=False)
+@app.route('/admin/results', methods=['GET'], strict_slashes=False)
+@app.route('/admin/results/<path:secret>', methods=['GET'], strict_slashes=False)
 def admin_results(secret=None):
     global SYSTEM_FORENSIC_LOCKOUT
     vote_counts = {}
@@ -657,8 +657,8 @@ def admin_results(secret=None):
         vote_counts[c['name']] = "🔴 LOCKOUT ACTIVE" if tally == -999 else tally
     return render_template('results.html', settings=ELECTION_SETTINGS, vote_counts=vote_counts, logs=consensus_blockchain.security_logs, secret=ADMIN_SECRET, secret_key=ADMIN_SECRET)
 
-@app.route('/admin/voter-registry', methods=['GET'])
-@app.route('/admin/voter-registry/<path:secret>', methods=['GET'])
+@app.route('/admin/voter-registry', methods=['GET'], strict_slashes=False)
+@app.route('/admin/voter-registry/<path:secret>', methods=['GET'], strict_slashes=False)
 def dynamic_voter_registry_view(secret=None):
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
@@ -668,8 +668,8 @@ def dynamic_voter_registry_view(secret=None):
     student_list = [{"id": r[0], "email": r[1]} for r in rows]
     return render_template('voter_registry.html', students=student_list, secret=ADMIN_SECRET, secret_key=ADMIN_SECRET)
 
-@app.route('/admin/add_student_live', methods=['POST'])
-@app.route('/admin/add_student_live/<path:secret>', methods=['POST'])
+@app.route('/admin/add_student_live', methods=['POST'], strict_slashes=False)
+@app.route('/admin/add_student_live/<path:secret>', methods=['POST'], strict_slashes=False)
 def add_student_live(secret=None):
     new_id = sanitize_input(request.form.get('student_id', '')).upper()
     new_email = sanitize_input(request.form.get('email', '')).lower()
@@ -685,8 +685,8 @@ def add_student_live(secret=None):
             return jsonify({"status": "error", "message": "ID already exists in Database Whitelist!"})
     return jsonify({"status": "error", "message": "Invalid mapping parameters provided!"})
 
-@app.route('/admin/delete_student_live', methods=['POST'])
-@app.route('/admin/delete_student_live/<path:secret>', methods=['POST'])
+@app.route('/admin/delete_student_live', methods=['POST'], strict_slashes=False)
+@app.route('/admin/delete_student_live/<path:secret>', methods=['POST'], strict_slashes=False)
 def delete_student_live(secret=None):
     target_id = sanitize_input(request.form.get('student_id', '')).upper()
     conn = sqlite3.connect('bcet_production.db')
@@ -701,12 +701,12 @@ def delete_student_live(secret=None):
     conn.close()
     return jsonify({"status": "error", "message": "Target parsing mapping resolution error."})
 
-@app.route('/admin/factory-reset', methods=['GET'])
-@app.route('/admin/factory-reset/<path:secret>', methods=['GET'])
+@app.route('/admin/factory-reset', methods=['GET'], strict_slashes=False)
+@app.route('/admin/factory-reset/<path:secret>', methods=['GET'], strict_slashes=False)
 def dynamic_factory_reset_view(secret=None):
     return render_template('factory_reset.html', secret=ADMIN_SECRET, secret_key=ADMIN_SECRET)
 
-@app.route('/admin/execute_node_flush', methods=['POST'])
+@app.route('/admin/execute_node_flush', methods=['POST'], strict_slashes=False)
 def execute_node_flush():
     target_id = sanitize_input(request.form.get('student_id', '')).upper()
     if not target_id:
@@ -719,12 +719,12 @@ def execute_node_flush():
     conn.close()
     return jsonify({"status": "success", "message": f"Database scrubbed for Student [{target_id}]."})
 
-@app.route('/admin/security-audit', methods=['GET'])
-@app.route('/admin/security-audit/<path:secret>', methods=['GET'])
+@app.route('/admin/security-audit', methods=['GET'], strict_slashes=False)
+@app.route('/admin/security-audit/<path:secret>', methods=['GET'], strict_slashes=False)
 def dynamic_security_audit_view(secret=None):
     return render_template('security_audit.html', secret=ADMIN_SECRET, secret_key=ADMIN_SECRET, logs=consensus_blockchain.security_logs)
 
-@app.route('/sync_candidates', methods=['POST'])
+@app.route('/sync_candidates', methods=['POST'], strict_slashes=False)
 def sync_candidates():
     incoming_data = request.json
     updated_candidates = []
@@ -733,7 +733,7 @@ def sync_candidates():
     ELECTION_SETTINGS["candidates"] = updated_candidates
     return jsonify({"status": "success", "message": "Synced Successfully!"})
 
-@app.route('/update_timing', methods=['POST'])
+@app.route('/update_timing', methods=['POST'], strict_slashes=False)
 def update_timing():
     data = request.json
     start_val = sanitize_input(data['start'])
@@ -748,7 +748,7 @@ def update_timing():
     conn.close()
     return jsonify({"status": "success"})
 
-@app.route('/stop_election', methods=['POST'])
+@app.route('/stop_election', methods=['POST'], strict_slashes=False)
 def stop_election():
     conn = sqlite3.connect('bcet_production.db')
     cursor = conn.cursor()
@@ -757,15 +757,15 @@ def stop_election():
     conn.close()
     return jsonify({"status": "success"})
 
-@app.route('/reset_election', methods=['POST'])
+@app.route('/reset_election', methods=['POST'], strict_slashes=False)
 def reset_election():
     global SYSTEM_FORENSIC_LOCKOUT
     SYSTEM_FORENSIC_LOCKOUT = False
     consensus_blockchain.reset_engine()
     return jsonify({"status": "success"})
 
-@app.route('/download-results', methods=['GET'])
-@app.route('/download-results/<path:secret>', methods=['GET'])
+@app.route('/download-results', methods=['GET'], strict_slashes=False)
+@app.route('/download-results/<path:secret>', methods=['GET'], strict_slashes=False)
 def download_results(secret=None):
     buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=letter)
