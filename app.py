@@ -50,7 +50,7 @@ def get_db_connection():
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
         conn = psycopg2.connect(url)
-        conn.autocommit = True  # 🔥 INSTANT SAVE TO NEON DB
+        conn.autocommit = True  # Ensures instant database commit
         return conn, "postgres"
     else:
         conn = sqlite3.connect('bcet_production.db')
@@ -88,9 +88,10 @@ def init_db():
             now_str = datetime.now(IST).strftime("%Y-%m-%dT%H:%M")
             future_str = (datetime.now(IST) + timedelta(days=7)).strftime("%Y-%m-%dT%H:%M")
             
-            cursor.execute("INSERT INTO system_settings VALUES ('start_time', %s) ON CONFLICT (key) DO NOTHING", (now_str,))
-            cursor.execute("INSERT INTO system_settings VALUES ('end_time', %s) ON CONFLICT (key) DO NOTHING", (future_str,))
-            cursor.execute("INSERT INTO system_settings VALUES ('is_active', '1') ON CONFLICT (key) DO NOTHING")
+            cursor.execute("DELETE FROM system_settings WHERE key IN ('start_time', 'end_time', 'is_active')")
+            cursor.execute("INSERT INTO system_settings (key, value) VALUES ('start_time', %s)", (now_str,))
+            cursor.execute("INSERT INTO system_settings (key, value) VALUES ('end_time', %s)", (future_str,))
+            cursor.execute("INSERT INTO system_settings (key, value) VALUES ('is_active', '1')")
         else:
             cursor.execute('''CREATE TABLE IF NOT EXISTS users 
                               (student_id TEXT PRIMARY KEY, email TEXT, password_hash TEXT)''')
@@ -288,7 +289,8 @@ def api_admin_upload_biometrics():
     face_vector_str = json.dumps(face_vector_raw) if face_vector_raw else None
     try:
         if db_type == "postgres":
-            cursor.execute("INSERT INTO android_biometrics VALUES (%s, %s, %s) ON CONFLICT (student_id) DO UPDATE SET fingerprint_data=EXCLUDED.fingerprint_data, face_vector=EXCLUDED.face_vector", (student_id, fingerprint_raw, face_vector_str))
+            cursor.execute("DELETE FROM android_biometrics WHERE student_id=%s", (student_id,))
+            cursor.execute("INSERT INTO android_biometrics (student_id, fingerprint_data, face_vector) VALUES (%s, %s, %s)", (student_id, fingerprint_raw, face_vector_str))
         else:
             cursor.execute("INSERT OR REPLACE INTO android_biometrics VALUES (?, ?, ?)", (student_id, fingerprint_raw, face_vector_str))
             conn.commit()
@@ -761,7 +763,8 @@ def add_student_live(secret=None):
             conn, db_type = get_db_connection()
             cursor = conn.cursor()
             if db_type == "postgres":
-                cursor.execute("INSERT INTO whitelist_registry VALUES (%s, %s) ON CONFLICT (student_id) DO UPDATE SET email = EXCLUDED.email", (new_id, new_email))
+                cursor.execute("DELETE FROM whitelist_registry WHERE student_id=%s", (new_id,))
+                cursor.execute("INSERT INTO whitelist_registry (student_id, email) VALUES (%s, %s)", (new_id, new_email))
             else:
                 cursor.execute("INSERT OR REPLACE INTO whitelist_registry VALUES (?, ?)", (new_id, new_email))
                 conn.commit()
@@ -842,26 +845,32 @@ def update_timing():
     formatted_start = format_datetime_for_input(start_val)
     formatted_end = format_datetime_for_input(end_val)
     
-    conn, db_type = get_db_connection()
-    cursor = conn.cursor()
-    if db_type == "postgres":
-        cursor.execute("INSERT INTO system_settings VALUES ('start_time', %s) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", (formatted_start,))
-        cursor.execute("INSERT INTO system_settings VALUES ('end_time', %s) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", (formatted_end,))
-        cursor.execute("INSERT INTO system_settings VALUES ('is_active', '1') ON CONFLICT (key) DO UPDATE SET value = '1'")
-    else:
-        cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('start_time', ?)", (formatted_start,))
-        cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('end_time', ?)", (formatted_end,))
-        cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('is_active', '1')")
-        conn.commit()
-    conn.close()
-    return jsonify({"status": "success"})
+    try:
+        conn, db_type = get_db_connection()
+        cursor = conn.cursor()
+        if db_type == "postgres":
+            cursor.execute("DELETE FROM system_settings WHERE key IN ('start_time', 'end_time', 'is_active')")
+            cursor.execute("INSERT INTO system_settings (key, value) VALUES ('start_time', %s)", (formatted_start,))
+            cursor.execute("INSERT INTO system_settings (key, value) VALUES ('end_time', %s)", (formatted_end,))
+            cursor.execute("INSERT INTO system_settings (key, value) VALUES ('is_active', '1')")
+        else:
+            cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('start_time', ?)", (formatted_start,))
+            cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('end_time', ?)", (formatted_end,))
+            cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('is_active', '1')")
+            conn.commit()
+        conn.close()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        print(f"Timing Update Exception: {e}")
+        return jsonify({"status": "error", "message": str(e)})
 
 @app.route('/stop_election', methods=['POST'], strict_slashes=False)
 def stop_election():
     conn, db_type = get_db_connection()
     cursor = conn.cursor()
     if db_type == "postgres":
-        cursor.execute("INSERT INTO system_settings VALUES ('is_active', '0') ON CONFLICT (key) DO UPDATE SET value = '0'")
+        cursor.execute("DELETE FROM system_settings WHERE key='is_active'")
+        cursor.execute("INSERT INTO system_settings (key, value) VALUES ('is_active', '0')")
     else:
         cursor.execute("INSERT OR REPLACE INTO system_settings VALUES ('is_active', '0')")
         conn.commit()
