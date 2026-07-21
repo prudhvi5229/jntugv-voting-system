@@ -643,10 +643,13 @@ def audit_portal():
             if result: break
     return render_template('audit.html', searched_id=searched_id, result=result)
 
-# 🔥 CATCH-ALL FLEXIBLE ADMIN ROUTING ENGINE (Fixes %7B%7Bsecret%7D%7D and 404 URL errors)
+# 🔥 FULLY MATCHED ADMIN PANEL BUTTON ROUTES (Fixes 404 Not Found on all 3 sub-buttons)
 
+# 1. Main Dashboard Results Route
 @app.route('/admin-results', methods=['GET'])
 @app.route('/admin-results/<path:secret>', methods=['GET'])
+@app.route('/admin/results', methods=['GET'])
+@app.route('/admin/results/<path:secret>', methods=['GET'])
 def admin_results(secret=None):
     global SYSTEM_FORENSIC_LOCKOUT
     vote_counts = {}
@@ -655,6 +658,7 @@ def admin_results(secret=None):
         vote_counts[c['name']] = "🔴 LOCKOUT ACTIVE" if tally == -999 else tally
     return render_template('results.html', settings=ELECTION_SETTINGS, vote_counts=vote_counts, logs=consensus_blockchain.security_logs)
 
+# 2. Open Voter Registry Control Page Button Route
 @app.route('/admin/voter-registry', methods=['GET'])
 @app.route('/admin/voter-registry/<path:secret>', methods=['GET'])
 def dynamic_voter_registry_view(secret=None):
@@ -699,6 +703,7 @@ def delete_student_live(secret=None):
     conn.close()
     return jsonify({"status": "error", "message": "Target parsing mapping resolution error."})
 
+# 3. Voter Node Factory Reset Button Route
 @app.route('/admin/factory-reset', methods=['GET'])
 @app.route('/admin/factory-reset/<path:secret>', methods=['GET'])
 def dynamic_factory_reset_view(secret=None):
@@ -717,6 +722,7 @@ def execute_node_flush():
     conn.close()
     return jsonify({"status": "success", "message": f"Database scrubbed for Student [{target_id}]."})
 
+# 4. Security Core Audit Page Button Route
 @app.route('/admin/security-audit', methods=['GET'])
 @app.route('/admin/security-audit/<path:secret>', methods=['GET'])
 def dynamic_security_audit_view(secret=None):
